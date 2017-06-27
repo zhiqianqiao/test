@@ -5,7 +5,7 @@ class NavMap:
     def __init__(self):
         pass
 
-    def get_par_loc(self, loc, lane_name='cur'):
+    def get_par_loc(self, loc, lane_name='l'):
         # lane_name in {'l', 'll', 'r', 'rr'}
         pass
 
