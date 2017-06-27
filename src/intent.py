@@ -82,7 +82,7 @@ class Intention:
         for intent in safe_intent:
             cur_traj_list = self.get_traj(intent)
             cur_scores = self.traj_batch_eval(cur_traj_list)
-            raw_traj_dict[inetnt] = cur_traj_list
+            raw_traj_dict[intent] = cur_traj_list
             best_traj_dict[intent] = cur_traj_list[np.argmax(cur_scores)]
             traj_score[intent] = cur_scores.max()
 
@@ -134,7 +134,3 @@ class Intention:
 
     def traj_batch_eval(self, traj_list):
         return []
-
-    def get_score(self, intention):
-        if intention == Intent.acc:
-            pass
