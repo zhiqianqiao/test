@@ -82,9 +82,16 @@ class Intention:
         for intent in safe_intent:
             cur_traj_list = self.get_traj(intent)
             cur_scores = self.traj_batch_eval(cur_traj_list)
-            raw_traj_dict = cur_traj_list
+            raw_traj_dict[inetnt] = cur_traj_list
             best_traj_dict[intent] = cur_traj_list[np.argmax(cur_scores)]
             traj_score[intent] = cur_scores.max()
+
+        total_score_dict = {}
+        for intent in intent_set:
+            total_score_dict[intent] = traj_score[intent] + safety_score[intent]
+        best_intent = max(total_score_dict.iterkeys(), key=(lambda k: total_score_dict[k]))
+        self.prev_traj = best_traj_dict[best_intent]
+        return best_intent, best_traj_dict[best_intent]
 
     def check_safety(self, intent):
         # 1 == safe, 0 == not safe
@@ -119,11 +126,14 @@ class Intention:
     def get_traj(self, intent):
         if intent not in {Intent.acc, Intent.l_turn, Intent.r_turn}:
             KeyError('Intent not supported! {}'.format(intent))
-        return []
+
+        traj_mgr = TrajMgr(self.p)
+        traj_mgr.init_context(map_data, self.perc, prev_traj)
+        traj_mgr.gen_traj(intent)
+        return traj_mgr
 
     def traj_batch_eval(self, traj_list):
         return []
-
 
     def get_score(self, intention):
         if intention == Intent.acc:

@@ -14,66 +14,29 @@ DEFAULT_MAX_ACCELERATION = 3.
 DEFAULT_MAX_DECELERATION = -5.
 
 
-class Path:
-    """
-    Path class describes the geometric of a curve for the vehicle/dynamic object to follow
-    """
-
-    def get_pose_at_distance(self, path_distance):
-        """
-        given any 0 <= s <= self.get_length(), the function returns a Pose object that describe the configuration of the car when the dynamic object excecutes s meters of the path.
-        :param path_distance: The queried arc length s.
-        :return: the pose of the dynamic object.
-        """
-        raise NotImplemented
-
-    def get_pose_at_distance_list(self, path_distance_list):
-        """
-        Batch processing mode of the get_pose_at_s function.
-        :param path_distance_list: a list of s in ascending order.
-        :return: a list of Pose corresponding to the s_list accordingly.
-        """
-        raise NotImplemented
-
-    def get_length(self):
-        """
-        get the total length of the path.
-        :return: the total length of the path
-        """
-        raise NotImplementedError
-
-
 class Trajectory:
-
-    def get_pose_at_time(self, trajectory_time):
-        """
-        given any 0 <= t <= self.get_time_horizon(), the function returns a Pose object that describe the configuration of the car at time t.
-        :param trajectory_time: The queried time t. t is relative to the start of the trajectory. It is not a timestamp time.
-        :return: the Pose object
-        """
-        raise NotImplemented
-
-    def get_pose_at_time_list(self, trajectory_time_list):
-        """
-        Batch processing mode of the get_pose_at_t function.
-        :param trajectory_time_list: a list of t in ascending order.
-        :return: a list of Pose corresponding to the time_list accordingly.
-        """
-        raise NotImplemented
-
-    def get_time_horizon(self):
-        """
-        the time horizon that the trajectory covers
-        :return:
-        """
-        raise NotImplemented
+    def __init__(self, poses, time_step, perception_time_stamp):
+        self.way_points = poses
+        self.time_step = time_step
+        self.start_time = perception_time_stamp
 
     def to_planner_result(self):
         """
         convert the trajectory to a list of Pose objects
         :return: a list of Pose objects that represents the waypoints for the car to follow.
         """
-        raise NotImplemented
+        planner_result = {'perceptionTimeStamp': time_stamp, 'trajectory': []}
+        for waypoint in self.way_points:
+            time_step = self.planner_setting.time_horizon / self.planner_setting.temporal_sampling_number
+            planner_result['trajectory'].append({
+                'time': time_stamp + t * time_step,
+                'pose': waypoint.to_dict()
+            })
+        return planner_result
+
+    def get_poses(self):
+        return self.way_points
+
 
 
 class BasicPlannerPath(Path):
