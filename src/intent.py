@@ -90,7 +90,6 @@ class Intention:
         for intent in intent_set:
             total_score_dict[intent] = traj_score[intent] + safety_score[intent]
         best_intent = max(total_score_dict.iterkeys(), key=(lambda k: total_score_dict[k]))
-        self.prev_traj = best_traj_dict[best_intent]
         return best_intent, best_traj_dict[best_intent]
 
     def check_safety(self, intent):
@@ -105,8 +104,8 @@ class Intention:
             ext2 = self.nav_map.get_extension(self.nav_map.get_par_loc(self.loc, 'rr'))
         occupancy_discount = 0
         for car in self.perc.cars:
-            ext1_flag = self.nav_map.in_extension(car.loc, ext1)
-            ext2_flag = self.nav_map.in_extension(car.loc, ext2)
+            ext1_flag = self.nav_map.in_extension([car.loc], ext1)
+            ext2_flag = self.nav_map.in_extension([car.loc], ext2)
             if ext1_flag or ext2_flag:
                 if car.reckless:
                     return 0
