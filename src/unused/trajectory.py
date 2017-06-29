@@ -1,5 +1,5 @@
 import numpy as np
-from intention import Intention
+from src.intention import Intention
 
 __author__ = 'yfzhao'
 

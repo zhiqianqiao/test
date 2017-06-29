@@ -2,9 +2,9 @@ __author__ = 'xhou'
 
 
 class Intention:
-    l_turn, acc, r_turn, term, emergency, detour = range(6)
-    valid_cases = {l_turn, r_turn, acc}
-    case_names = {'l_turn': l_turn, 'acc': acc, 'r_turn': r_turn,
+    l_turn, acc, r_turn, defense, term, emergency, detour = range(7)
+    valid_cases = {l_turn, r_turn, acc, defense}
+    case_names = {'l_turn': l_turn, 'acc': acc, 'r_turn': r_turn, 'defense': defense,
                   'term': term, 'emergency': emergency, 'detour': detour}
 
     def __init__(self, nav_map, p):
@@ -64,15 +64,15 @@ class Intention:
                    'Change lane not safe, performing fallback plan (ACC)'
         return best_intent, 'Best intent successfully derived'
 
-    def update_change_lane(self, loc_hist, in_perc, target_ext):
+    def update_change_lane(self, loc_hist, in_perc, intent, target_ext):
         self.loc_hist = loc_hist
         self.perc = in_perc
         cur_score = self.change_lane_check(in_perc)
         if cur_score < self.p.change_lane_score:
-            return False, 'Lane change interupted. Switching back to ACC...'
+            return Intention.defense, 'Lane change interupted. Switching to defensive driving mode...'
         if self.nav_map.in_extension(loc_hist, target_ext):
-            return True, 'Lane change successful.'
-        return False, 'Lane change still in progress...'
+            return Intention.acc, 'Lane change successful.'
+        return intent, 'Lane change still in progress...'
 
     def change_lane_check(self, in_perc):
         return 1

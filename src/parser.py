@@ -10,6 +10,7 @@ class LaneParser:
     def parse(self, loc_hist):
         pass
 
+
 class CarParser:
     def __init__(self):
         pass

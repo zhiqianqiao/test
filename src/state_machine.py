@@ -9,13 +9,16 @@ __author__ = 'xhou'
 class StateMachine:
     def __init__(self, p):
         self.p = p
-        self.state = Intention.acc
 
         self.nav_map = NavMap()
         self.acc_intention = Intention(nav_map=self.nav_map, p=self.p)
         self.traj_mgr = TrajMgr()
         self.loc_hist = []
-        self.change_lane_target = []
+
+        self.intent = Intention.acc
+
+        self.change_lane_target = None
+        self.traj = None
 
     def update(self, loc, in_perc):
         self.loc_hist.append(loc)
@@ -23,19 +26,33 @@ class StateMachine:
             self.loc_hist = self.loc_hist[-self.p.loc_hist_len]
         self.lane_parser.parse(self.loc_hist)
 
-        if self.state == Intention.acc:
-            cur_intent, intent_msg = self.acc_intention.update_acc(loc=loc, in_perc=in_perc)
-            if cur_intent in {Intention.detour, Intention.term, Intention.emergency}:
+        if self.intent == Intention.acc:
+            self.intent, intent_msg = self.acc_intention.update_acc(self.loc_hist, in_perc)
+            if self.intent in {Intention.detour, Intention.term, Intention.emergency}:
                 raise RuntimeError(intent_msg)
 
-            if cur_intent in {Intention.l_turn, Intention.r_turn}:
-                turn_val = 'l' if cur_intent == Intention.l_turn else 'r'
+            if self.intent in {Intention.l_turn, Intention.r_turn}:
+                turn_val = 'l' if self.intent == Intention.l_turn else 'r'
                 self.change_lane_target = self.nav_map.get_extension(self.nav_map.get_par_loc(loc, turn_val))
+                self.traj = None
 
-            self.state = cur_intent
-            self.traj_mgr.gen_traj(cur_intent)
+        if self.intent in {Intention.l_turn, Intention.r_turn}:
+            self.intent, intent_msg = \
+                self.acc_intention.update_change_lane(self.loc_hist, in_perc, self.intent, self.change_lane_target)
 
-        if self.state in {Intention.l_turn, Intention.r_turn}:
-            is_finished, intent_msg = self.acc_intention.update_change_lane()
+            if self.intent == Intention.acc:
+                self.change_lane_target = None
+                self.traj = None
+
+            if self.intent == Intention.defense:
+                self.change_lane_target = None
+                self.traj = None
+
+        if self.intent == Intention.defense:
+            self.intent = Intention.acc
+            # TODO: add some defensive measures here
+
+        self.traj = self.traj_mgr.gen_traj(self.intent, self.loc_hist, in_perc, self.traj)
+        return
 
 
