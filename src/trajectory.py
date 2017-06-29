@@ -1,5 +1,5 @@
 import numpy as np
-from intent import Intent
+from intention import Intention
 
 __author__ = 'yfzhao'
 
@@ -17,7 +17,7 @@ class Traj:
         self.car_grid = CarGrid(in_perc)
 
     def gen_speed_profile(self, intent):
-        if intent == Intent.acc:
+        if intent == Intention.acc:
             front_speed = self.car_grid.g3.velocity
-        if intent == Intent.l_turn:
+        if intent == Intention.l_turn:
             front_speed = min(self.car_grid.g3.velocity, front_speed = self.car_grid.g0.velocity)
