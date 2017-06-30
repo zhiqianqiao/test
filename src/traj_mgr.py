@@ -1,4 +1,4 @@
-from intention import Intention
+from src.unused.intention import Intention
 
 __author__ = 'xhou'
 

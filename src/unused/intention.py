@@ -1,4 +1,4 @@
-from perc_parser import PercParser
+from src.perc_parser import PercParser
 __author__ = 'xhou'
 
 

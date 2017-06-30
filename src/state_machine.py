@@ -21,14 +21,13 @@ class Planner:
         self.term = StateTerm(self.nav_map, p)
 
         self.state = self.acc
-        self.msg = dict()
 
-    def update(self, loc, in_perc):
+    def update(self, loc, in_perc, msg):
         self.loc_hist.append(loc)
         if len(self.loc_hist) > self.p.loc_hist_len:
             self.loc_hist = self.loc_hist[-self.p.loc_hist_len]
-        new_state, self.msg = self.state.update(loc, in_perc, self.msg)
+        new_state, msg = self.state.update(loc, in_perc, msg)
         self.state = getattr(self, new_state)
-        return
+        self.state.gen_traj()
 
-
+        return msg
