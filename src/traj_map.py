@@ -1,7 +1,10 @@
 import math
+from tsmap import *
 
 __author__ = 'yfzhao'
 
+MERGE_RIGHT = 'MERGE_RIGHT'
+MERGE_LEFT  = 'MERGE_LEFT'
 
 class TrajMap(object):
 
@@ -18,9 +21,9 @@ class TrajMap(object):
 
     @staticmethod
     def get_heading(lane, ref_p):
-        temp_p, dist = lane.move_forward(ref_p, 0.08)
+        temp_p, dist = lane.move_forward(ref_p, 0.2)
         if dist < 0.01:
-            temp_p, dist = lane.move_backward(ref_p, 0.08)
+            temp_p, dist = lane.move_backward(ref_p, 0.2)
             tmp = ref_p
             ref_p = temp_p
             temp_p = tmp
@@ -42,6 +45,26 @@ class TrajMap(object):
         d = d * math.sin(heading_delta)
         # if d < 0, on the left; if d > 0, on the right
         return lane, l, d
+
+
+    def lane_numbering(self,lane):
+        right = lane.right_lane
+        right_list = []
+        while right != None:
+            right_list.append(right)
+            right = right.right_lane
+
+        left = lane.left_lane
+        left_list = []
+        while left != None:
+            left_list.append(left)
+            left = left.left_lane
+
+        left_list = left_list[::-1]
+        # self.left_lanes = left_list
+        # self.right_lanes = right_list
+
+        return left_list,right_list
 
     @staticmethod
     def get_lane_length(lane):
