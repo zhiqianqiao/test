@@ -33,8 +33,8 @@ class NavMap:
 
 
 class LaneExtension:
-    def __init__(self, in_nodes, start_len, end_len):
-        self.nodes = in_nodes
+    def __init__(self):
+        pass
 
     def contains_loc(self, loc):
         pass

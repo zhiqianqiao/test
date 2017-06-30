@@ -1,10 +1,12 @@
-from pose import Pose
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.linear_model import Ridge
 from collections import deque
-import utilities.geometry as ge
+
 import debugging_tools.octopus_logger as oclog
+import matplotlib.pyplot as plt
+import numpy as np
+import utilities.geometry as ge
+from sklearn.linear_model import Ridge
+
+from src.unused.pose import Pose
 
 DEFAULT_SAMPLING_NUMBER = 200
 SMALL_NUMBER = 0.001

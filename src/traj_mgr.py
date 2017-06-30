@@ -1,6 +1,4 @@
-from intent import Intent
-from traj_map import TrajMap
-import numpy as np
+from intention import Intention
 
 __author__ = 'xhou'
 
@@ -22,18 +20,22 @@ class TrajMgr:
         self.car_grid = CarGrid(in_perc)
 
     def gen_speed_profile(self, intent):
-        pass
 
-    def gen_traj(self, speed_profile, intent):
+        if intent == Intention.acc:
+            acc_speed = self.car_grid.g3.velocity
+        if intent == Intention.l_turn:
+            acc_speed = min(self.car_grid.g3.velocity, front_speed=self.car_grid.g0.velocity)
+        # TODO: right turn and gen speed profile
+
+    def gen_traj(self, intent):
         pass
 
     def eval_traj(self, traj):
         pass
 
 
+
 class Traj:
     def __init__(self):
         pass
-
-
 
