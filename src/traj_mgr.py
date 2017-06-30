@@ -20,6 +20,7 @@ class TrajMgr:
         self.car_grid = CarGrid(in_perc)
 
     def gen_speed_profile(self, intent):
+
         if intent == Intention.acc:
             acc_speed = self.car_grid.g3.velocity
         if intent == Intention.l_turn:
@@ -37,3 +38,4 @@ class TrajMgr:
 class Traj:
     def __init__(self):
         pass
+
