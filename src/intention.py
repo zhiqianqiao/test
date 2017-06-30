@@ -1,17 +1,20 @@
+from perc_parser import PercParser
 __author__ = 'xhou'
 
 
 class Intention:
+
     l_turn, acc, r_turn, defense, term, emergency, detour = range(7)
-    valid_cases = {l_turn, r_turn, acc, defense}
-    case_names = {'l_turn': l_turn, 'acc': acc, 'r_turn': r_turn, 'defense': defense,
-                  'term': term, 'emergency': emergency, 'detour': detour}
+    valid_states = {l_turn, r_turn, acc, defense}
+    state_names = {l_turn: 'l_turn', acc: 'acc', r_turn: 'r_turn',
+                   defense: 'defense', term: 'term', emergency: 'emergency', detour: 'detour'}
 
     def __init__(self, nav_map, p):
         self.nav_map = nav_map
         self.p = p
         self.loc_hist = None
         self.perc = None
+        self.car_parser = PercParser(nav_map, p)
 
     def update_acc(self, loc_hist, in_perc):
         self.loc_hist = loc_hist
@@ -36,7 +39,7 @@ class Intention:
         intent_set = set()
         if remain_c:
             intent_set.add(Intention.acc)
-            if self.perc.front_car_speed < self.p.min_front_speed:
+            if in_perc.front_car_speed < self.p.min_front_speed:
                 if remain_l:
                     intent_set.add(Intention.l_turn)
                 if remain_r:
@@ -48,13 +51,13 @@ class Intention:
                 intent_set.add(Intention.r_turn)
 
         for intent in intent_set:
-            if intent not in Intention.valid_cases:
+            if intent not in Intention.valid_states:
                 return Intention.emergency, \
                        'Unknown critical error. Possible bugs from NavMap. Exiting navigation...'
 
         max_score = 0
         for intent in intent_set:
-            cur_score = self.pre_change_lane_check(intent)
+            cur_score = self.pre_change_lane_check(intent, in_perc)
             if cur_score > max_score:
                 max_score = cur_score
                 best_intent = intent
@@ -77,7 +80,7 @@ class Intention:
     def change_lane_check(self, in_perc):
         return 1
 
-    def pre_change_lane_check(self, intent):
+    def pre_change_lane_check(self, intent, in_perc):
         loc = self.loc_hist[-1]
         # 1 == safe, 0 == not safe
         if intent == Intention.acc:
@@ -89,7 +92,7 @@ class Intention:
             ext1 = self.nav_map.get_extension(self.nav_map.get_par_loc(loc, 'r'))
             ext2 = self.nav_map.get_extension(self.nav_map.get_par_loc(loc, 'rr'))
         occupancy_discount = 0
-        for car in self.perc.cars:
+        for car in in_perc.cars:
             ext1_flag = self.nav_map.in_extension([car.loc], ext1)
             ext2_flag = self.nav_map.in_extension([car.loc], ext2)
             if ext1_flag or ext2_flag:
