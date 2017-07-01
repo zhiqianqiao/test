@@ -1,4 +1,3 @@
-import numpy as np
 import ConfigParser
 
 __author__ = 'xhou'

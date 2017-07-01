@@ -6,7 +6,8 @@ class NavMap:
         pass
 
     def get_par_loc(self, loc, lane_name='l'):
-        # lane_name in {'l', 'll', 'r', 'rr'}
+        # lane_name in {'c', 'l', 'll', 'r', 'rr'}
+        # return lane center point. Return None if lane does not exist
         pass
 
     def remaining(self, loc):

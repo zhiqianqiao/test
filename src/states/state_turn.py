@@ -3,7 +3,7 @@ __author__ = 'xhou'
 
 
 class StateTurn(State):
-    def _update(self, loc_hist, in_perc, msg):
+    def update(self, loc_hist, in_perc, msg):
         self.perc_parser.parse(loc_hist, in_perc)
 
         cur_score = self.perc_parser.change_lane_check()

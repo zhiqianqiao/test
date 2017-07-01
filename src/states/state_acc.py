@@ -10,7 +10,6 @@ class StateACC(State):
     def update(self, loc_hist, in_perc, msg):
         msg = {'state': None, 'target_lane': None, 'txt': ''}
         loc = loc_hist[-1]
-        self.perc_parser.parse(loc_hist, in_perc)
 
         remain_th = self.p.remain_th
         remain_c_val = self.nav_map.remaining(loc)
