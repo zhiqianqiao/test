@@ -123,9 +123,9 @@ class PercParser:
         # TODO: calculate a value for each state
         safe_condition = [set() for i in self.p.cell_num]
         if src_state == State.acc and dst_state == State.l_turn:
-            safe_condition[0] = {Predictor.brake}
-            safe_condition[2] = {Predictor.accel}
-            safe_condition[3] = {Predictor.l_turn, Predictor.brake}
+            safe_condition[0] = {Predictor.underspeed}
+            safe_condition[2] = {Predictor.overspeed}
+            safe_condition[3] = {Predictor.l_turn, Predictor.underspeed}
             safe_condition[9] = {Predictor.r_turn, Predictor.unknown}
             cond_flag, cond_msg = self._safety_ckeck(safe_condition)
             if self.cell_pool[1]:
@@ -133,9 +133,9 @@ class PercParser:
                 cond_msg += '   Cell 1 not empty!'
             return cond_flag, cond_msg
         if src_state == State.acc and dst_state == State.r_turn:
-            safe_condition[6] = {Predictor.brake}
-            safe_condition[8] = {Predictor.accel}
-            safe_condition[3] = {Predictor.r_turn, Predictor.brake}
+            safe_condition[6] = {Predictor.underspeed}
+            safe_condition[8] = {Predictor.overspeed}
+            safe_condition[3] = {Predictor.r_turn, Predictor.underspeed}
             safe_condition[10] = {Predictor.l_turn, Predictor.unknown}
             cond_flag, cond_msg = self._safety_ckeck(safe_condition)
             if self.cell_pool[7]:
@@ -143,18 +143,36 @@ class PercParser:
                 cond_msg += '   Cell 7 not empty!'
             return cond_flag, cond_msg
         if src_state == State.l_turn and dst_state == State.l_turn:
-            safe_condition[0] = {Predictor.brake}
-            safe_condition[1] = {Predictor.brake, Predictor.accel}
+            safe_condition[0] = {Predictor.underspeed}
+            safe_condition[1] = {Predictor.underspeed, Predictor.overspeed}
             safe_condition[9] = {Predictor.r_turn}
             return self._safety_ckeck(safe_condition)
         if src_state == State.r_turn and dst_state == State.r_turn:
-            safe_condition[6] = {Predictor.brake}
-            safe_condition[7] = {Predictor.brake, Predictor.accel}
+            safe_condition[6] = {Predictor.underspeed}
+            safe_condition[7] = {Predictor.underspeed, Predictor.overspeed}
             safe_condition[10] = {Predictor.r_turn}
             return self._safety_ckeck(safe_condition)
         if src_state == State.acc and dst_state == State.acc:
-            safe_condition[0] = {Predictor.brake}
+            safe_condition[0] = {Predictor.underspeed}
             safe_condition[1] = {Predictor.r_turn}
             safe_condition[7] = {Predictor.l_turn}
             return self._safety_ckeck(safe_condition)
         return False, 'src -- dst combination not supported!'
+
+    def _lane_speed_estimation(self, cond_flag, cond_msg, dst_state):
+        if not cond_flag:
+            return 0, cond_msg
+
+        target_lane_cars = set()
+        speed_est_msg = ''
+        if dst_state == State.l_turn:
+            for car in self.cell_pool
+
+        if dst_state == State.r_turn:
+            pass
+
+        if dst_state == State.acc:
+            pass
+
+        # get avg_speed
+        return avg_speed, speed_est_msg
