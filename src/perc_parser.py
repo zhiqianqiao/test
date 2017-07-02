@@ -83,6 +83,7 @@ class PercParser:
         self.cell_nearest = [None] * self.p.cell_num
         self.cell_status = [set() for i in range(self.p.cell_num)]
 
+        # TODO: perception parsing
         for car_id, car_loc in in_perc.iteritems():
             for cell_itr, cur_lane_ext in enumerate(self.cells):
                 if cur_lane_ext.contains_loc(car_loc):
@@ -119,6 +120,7 @@ class PercParser:
         return True, ''
 
     def safety_check(self, src_state, dst_state):
+        # TODO: calculate a value for each state
         safe_condition = [set() for i in self.p.cell_num]
         if src_state == State.acc and dst_state == State.l_turn:
             safe_condition[0] = {Predictor.brake}

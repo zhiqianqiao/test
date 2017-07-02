@@ -5,9 +5,10 @@ __author__ = 'xhou'
 class StateTurn(State):
     def update(self, loc_hist, in_perc, msg):
         self.perc_parser.parse(loc_hist, in_perc)
+        cur_state = msg['state']
 
-        cur_score = self.perc_parser.change_lane_check()
-        if cur_score < self.p.change_lane_score:
+        cur_score = self.perc_parser.safety_check(cur_state, cur_state)
+        if cur_score < self.p.change_lane_interrupt_th:
             msg['state'] = State.defense
             msg['txt'] = 'Lane change interupted. Switching to defensive driving mode...'
             return msg

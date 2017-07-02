@@ -34,8 +34,8 @@ class Planner:
         in_perc = self.predictor.update(in_perc)
 
         self.perc_parser.parse(self.loc_hist, in_perc)
-        new_state, msg = self.state.update(loc, in_perc, msg)
-        self.state = getattr(self, new_state)
+        msg = self.state.update(loc, in_perc, msg)
+        self.state = getattr(self, msg['state'])
         self.state.gen_traj()
 
         return msg

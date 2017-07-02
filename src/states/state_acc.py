@@ -50,12 +50,14 @@ class StateACC(State):
 
         max_score = 0
         for state in state_set:
-            cur_score = self.perc_parser.acc_precheck(state)
+            cur_score = self.perc_parser.safety_check(State.acc, state)
             if cur_score > max_score:
                 max_score = cur_score
                 best_state = state
 
-        if max_score < self.p.pre_change_lane_score:
+        change_lane_pressure = 1 - (remain_c_val - self.p.critical_remain_th) /\
+                               (self.p.remain_th - self.p.critical_remain_th) * (1 - self.p.min_change_lane_score)
+        if max_score < change_lane_pressure:
             msg['state'] = State.acc
             msg['txt'] = 'Change lane not safe, performing fallback plan (ACC)'
             return msg

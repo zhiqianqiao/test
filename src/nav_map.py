@@ -32,6 +32,7 @@ class NavMap:
                 return False
         return True
 
+    # TODO: add speed limit
     def get_speed_limit(self, loc):
         pass
 

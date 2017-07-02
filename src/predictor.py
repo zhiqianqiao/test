@@ -10,7 +10,6 @@ class Predictor:
     unknown = 'unknown'
     reckless = 'reckless'
 
-
     def __init__(self):
         pass
 
