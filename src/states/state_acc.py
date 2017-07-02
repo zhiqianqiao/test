@@ -31,7 +31,7 @@ class StateACC(State):
         state_set = set()
         if remain_c:
             state_set.add(State.acc)
-            if self.perc_parser.front_car_speed() < self.p.min_front_speed:
+            if self.perc_parser.front_car_stats() < self.p.min_front_speed:
                 if remain_l:
                     state_set.add(State.l_turn)
                 if remain_r:

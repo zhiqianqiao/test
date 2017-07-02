@@ -39,7 +39,7 @@ class Intention:
         intent_set = set()
         if remain_c:
             intent_set.add(Intention.acc)
-            if in_perc.front_car_speed < self.p.min_front_speed:
+            if in_perc.front_car_stats < self.p.min_front_speed:
                 if remain_l:
                     intent_set.add(Intention.l_turn)
                 if remain_r:

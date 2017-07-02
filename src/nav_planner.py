@@ -1,4 +1,5 @@
 from nav_map import NavMap
+from predictor import Predictor
 from src.states.state_base import *
 from src.states.state_acc import StateACC
 from src.states.state_turn import StateLTurn, StateRTurn
@@ -22,12 +23,17 @@ class Planner:
         self.term = StateTerm(self.nav_map, self.perc_parser, p)
 
         self.state = self.acc
+        self.predictor = Predictor()
 
     def update(self, loc, in_perc, msg):
         self.loc_hist.append(loc)
         if len(self.loc_hist) > self.p.loc_hist_len:
             self.loc_hist = self.loc_hist[-self.p.loc_hist_len]
-        self.perc_parser.parse(loc_hist, in_perc)
+
+        # TODO: will be replaced by perception module
+        in_perc = self.predictor.update(in_perc)
+
+        self.perc_parser.parse(self.loc_hist, in_perc)
         new_state, msg = self.state.update(loc, in_perc, msg)
         self.state = getattr(self, new_state)
         self.state.gen_traj()

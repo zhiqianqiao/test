@@ -32,6 +32,9 @@ class NavMap:
                 return False
         return True
 
+    def get_speed_limit(self, loc):
+        pass
+
 
 class LaneExtension:
     def __init__(self):
