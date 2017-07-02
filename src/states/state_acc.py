@@ -56,7 +56,7 @@ class StateACC(State):
                 best_state = state
 
         change_lane_pressure = (self.p.remain_th - remain_c_val) / self.p.remain_th * (1 - self.p.min_change_lane_score)
-        if max_score + change_lane_pressure > 1:
+        if max_score + change_lane_pressure < 1:
             msg['state'] = State.acc
             msg['txt'] = 'Change lane not safe, performing fallback plan (ACC)'
             return msg
