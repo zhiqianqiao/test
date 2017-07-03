@@ -31,6 +31,17 @@ class Planner:
         self.state = self.acc
         self.predictor = Predictor(frame_to_pred=5, reg_win=20)
 
+    def update_maps(ts_map, nav_map):
+        self.traj_gen.update(ts_map)
+        
+        self.acc.update_map(nav_map)
+        self.l_pre_turn.update_map(nav_map)
+        self.r_pre_turn.update_map(nav_map)
+        self.l_turn.update_map(nav_map)
+        self.r_turn.update_map(nav_map)
+        self.emergency.update_map(nav_map)
+        self.detour.update_map(nav_map)
+        self.term.update_map(nav_map)
     def update(self, loc, ego_v, raw_perc, msg):
         self.loc_hist.append(loc)
         if len(self.loc_hist) > self.p.loc_hist_len:
