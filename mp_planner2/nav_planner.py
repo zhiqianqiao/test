@@ -1,5 +1,4 @@
 from tsmap import TSMap
-from map.nav_sub_map import NavMap
 from perc_parser import PercParser
 from predictor import Predictor
 from states.state_acc import StateACC
@@ -13,25 +12,26 @@ __author__ = 'xhou'
 class Planner:
     def __init__(self, p):
         self.p = p
-        self.nav_map = NavMap()
+        self.nav_map = None
         self.traj_gen = TrajGenerator()
-        self.perc_parser = PercParser(self.nav_map, p)
+        self.perc_parser = PercParser(p)
         self.loc_hist = []
         self.timestamp = 0
 
-        self.acc = StateACC(self.nav_map, self.perc_parser, self.traj_gen, p)
-        self.l_pre_turn = StateLTurn(self.nav_map, self.perc_parser, self.traj_gen, p)
-        self.r_pre_turn = StateRTurn(self.nav_map, self.perc_parser, self.traj_gen, p)
-        self.l_turn = StateLTurn(self.nav_map, self.perc_parser, self.traj_gen, p)
-        self.r_turn = StateRTurn(self.nav_map, self.perc_parser, self.traj_gen, p)
-        self.emergency = StateEmergency(self.nav_map, self.perc_parser, self.traj_gen, p)
-        self.detour = StateDetour(self.nav_map, self.perc_parser, self.traj_gen, p)
-        self.term = StateTerm(self.nav_map, self.perc_parser, self.traj_gen, p)
+        self.acc = StateACC(self.perc_parser, self.traj_gen, p)
+        self.l_pre_turn = StateLTurn(self.perc_parser, self.traj_gen, p)
+        self.r_pre_turn = StateRTurn(self.perc_parser, self.traj_gen, p)
+        self.l_turn = StateLTurn(self.perc_parser, self.traj_gen, p)
+        self.r_turn = StateRTurn(self.perc_parser, self.traj_gen, p)
+        self.emergency = StateEmergency(self.perc_parser, self.traj_gen, p)
+        self.detour = StateDetour(self.perc_parser, self.traj_gen, p)
+        self.term = StateTerm(self.perc_parser, self.traj_gen, p)
 
         self.state = self.acc
         self.predictor = Predictor(frame_to_pred=5, reg_win=20)
 
-    def update_maps(ts_map, nav_map):
+    def update_maps(self, ts_map, nav_map):
+        self.nav_map = nav_map
         self.traj_gen.update(ts_map)
         
         self.acc.update_map(nav_map)
@@ -42,6 +42,9 @@ class Planner:
         self.emergency.update_map(nav_map)
         self.detour.update_map(nav_map)
         self.term.update_map(nav_map)
+
+        self.perc_parser.update_map(nav_map)
+
     def update(self, loc, ego_v, raw_perc, msg):
         self.loc_hist.append(loc)
         if len(self.loc_hist) > self.p.loc_hist_len:
@@ -58,6 +61,5 @@ class Planner:
         msg = self.state.update(vehicle_info, perc, msg)
 
         self.state = getattr(self, msg['state'])
-        self.state.gen_traj()
 
         return msg

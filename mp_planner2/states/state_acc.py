@@ -39,7 +39,8 @@ class StateACC(State):
         state_set = set()
         if remain_c:
             state_set.add(State.acc)
-            if self.perc_parser.front_car_stats() < self.p.min_front_speed:
+            # if self.perc_parser.front_car_stats() < self.p.min_front_speed:
+            if False:
                 if remain_l:
                     state_set.add(State.l_pre_turn)
                 if remain_r:
@@ -57,9 +58,9 @@ class StateACC(State):
                 msg['traj'] = []
                 return msg
 
-        max_score = 0
+        max_score = -100
         for state in state_set:
-            cur_score = self.perc_parser.safety_check(State.acc, state)
+            cur_score, whatever = self.perc_parser.safety_check(State.acc, state)
             if cur_score > max_score:
                 max_score = cur_score
                 best_state = state

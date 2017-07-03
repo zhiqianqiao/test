@@ -9,17 +9,20 @@ __author__ = 'xhou'
 
 
 class PercParser:
-    def __init__(self, nav_map, p):
-        self.nav_map = nav_map
+    def __init__(self, p):
+        self.nav_map = None
         self.p = p
 
-        self.cells = [] * p.cell_num
+        self.cells = [[] for _ in range(p.cell_num)]
         self.perc = None
 
         self.cell_pool = []
         self.cell_nearest = []
         self.cell_status = []
         self.nearest_only = {0, 2, 3, 5, 6, 8}
+
+    def update_map(self, nav_map):
+        self.nav_map = nav_map
 
     def init_cells(self, loc):
         p = self.p
@@ -40,22 +43,29 @@ class PercParser:
         ll_loc = self.nav_map.get_par_loc(loc, 'll')
         rr_loc = self.nav_map.get_par_loc(loc, 'rr')
         loc_list = [l_loc, l_loc, l_loc, loc, loc, loc, r_loc, r_loc, r_loc, ll_loc, rr_loc]
+        loc_list = [self._to_list(loc) for loc in loc_list]     # lambda (x), self._to_point3d(x)
 
         for i in range(self.p.cell_num):
             self.cells[i] = self.nav_map.get_extension(loc_list[i], cell_upper[i], cell_lower[i])
 
-    def _get_front_vehicle(self, loc, ego_state):
-        speed_limit = self.nav_map.get_speed_limit(loc)
-        fv_set = set()
+    @staticmethod
+    def _to_list(loc):
+        if loc is None or type(loc) is list:
+            return loc
+        return [loc.x, loc.y]
 
+    def get_front_car(self, loc, ego_state):
+        speed_limit = 40 #self.nav_map.get_speed_limit(loc)
+
+        fv_set = set()
         if ego_state not in State.valid_states:
             return set(), 'Ego-state not supported!'
         if ego_state == State.acc:
             for car in self.cell_pool[1]:
-                if car['state'] == Predictor.r_turn:
+                if car['state'][Predictor.r_turn]:
                     fv_set.add(car)
             for car in self.cell_pool[7]:
-                if car['state'] == Predictor.l_turn:
+                if car['state'][Predictor.l_turn]:
                     fv_set.add(car)
             if self.cell_nearest[3]:
                 fv_set.add(self.cell_nearest[3])
@@ -73,11 +83,49 @@ class PercParser:
             fv_set = {near_car}
             msg = 'Front vehicle detection turn state.'
         if not fv_set:
-            fv_set = {self.get_virtual_car(loc, self.p.safe_distance, speed_limit)}
+            ##TODO: fix it
+            fv_set = {self.nav_map.get_virtual_car(loc, self.p.safe_distance, speed_limit)}
+            ##TODO: FIX it
+            # fv_set = {self.nav_map.get_virtual_car(loc, self.p.safe_distance)}
+        return fv_set, msg
+
+    def _get_front_vehicle(self, loc, ego_state):
+        speed_limit = self.nav_map.get_speed_limit(loc)
+        fv_set = set()
+
+        if ego_state not in State.valid_states:
+            return set(), 'Ego-state not supported!'
+        if ego_state == State.acc:
+            for car in self.cell_pool[1]:
+                if car['state'][Predictor.r_turn]:
+                    fv_set.add(car)
+            for car in self.cell_pool[7]:
+                if car['state'][Predictor.l_turn]:
+                    fv_set.add(car)
+            if self.cell_nearest[3]:
+                fv_set.add(self.cell_nearest[3])
+            msg = 'Front vehicle in ACC state. {} car(s) found'.format(len(fv_set))
+        if ego_state in {State.l_turn, State.r_turn, State.l_pre_turn, State.r_pre_turn}:
+            target1 = 1 if ego_state in {State.l_turn, State.l_pre_turn} else 7
+            target2 = 0 if ego_state == {State.r_turn, State.r_pre_turn} else 6
+            near_car = None
+            min_l = np.inf
+            for car in set.union(self.cell_pool[target1], {self.cell_nearest[target2], self.cell_nearest[3]}):
+                rel_l = car['rel_l']
+                if 0 < rel_l < min_l:
+                    near_car = car
+                    min_l = rel_l
+            fv_set = {near_car}
+            msg = 'Front vehicle detection turn state.'
+        if not fv_set:
+            ##TODO: fix it
+            fv_set = {self.nav_map.get_virtual_car(loc, self.p.safe_distance, speed_limit)}
+            ##TODO: FIX it
+            # fv_set = {self.nav_map.get_virtual_car(loc, self.p.safe_distance)}
         return fv_set, msg
 
     def get_virtual_car(self, vehicle_info, ego_state):
-        loc = vehicle_info['loc']
+        loc = vehicle_info['loc_hist'][-1]
         ego_v = vehicle_info['ego_v']
 
         fv_set, fv_msg = self._get_front_vehicle(loc, ego_state)
@@ -110,7 +158,7 @@ class PercParser:
                     self.cell_pool[cell_itr].add(car_id)
                     break
 
-        for cell_itr, cars in self.cell_pool:
+        for cell_itr, cars in enumerate(self.cell_pool):
             if cell_itr in self.nearest_only:
                 n_dist = np.inf
                 n_car = None
@@ -124,7 +172,8 @@ class PercParser:
                 car_set = cars
 
             for car in car_set:
-                self.cell_status[cell_itr].add(car['state'])
+                if car is not None:
+                    self.cell_status[cell_itr].add(car['state'])
 
     # def panic_check(self):
     #     if (self.cell_status[4]) or (Predictor.reckless in self.cell_status[3]):
@@ -140,7 +189,7 @@ class PercParser:
         return True, ''
 
     def _safety_pre_check(self, src_state, dst_state):
-        safe_condition = [set() for i in self.p.cell_num]
+        safe_condition = [set() for i in range(self.p.cell_num)]
         if src_state == State.acc and dst_state == State.l_turn:
             safe_condition[0] = {Predictor.underspeed}
             safe_condition[2] = {Predictor.overspeed}
@@ -232,4 +281,4 @@ class PercParser:
         density_score, density_msg = self._density_score(cars)
         rel_diff_score, rel_diff_msg = self._rel_diff_score(cars)
 
-        return (density_score + rel_diff_msg) / 2, '\n'.join([density_msg, rel_diff_msg])
+        return (density_score + rel_diff_score) / 2, '\n'.join([density_msg, rel_diff_msg])
