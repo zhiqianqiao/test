@@ -1,7 +1,7 @@
 from traj_map import TrajMap
 import math
 from tsmap import *
-
+from speed_profile_acc import SpeedProfileACC
 
 class TrajState(object):
     valid = {'acc', 'left', 'right', 'undo'}
@@ -215,7 +215,23 @@ class TrajGenerator(object):
         self.central_distance = None
         self.merge_distance = None
 
-    def generate(self, action, speed_profile, ego_pose):
+        self.speed_profile_gen = SpeedProfileACC([-3.0, 3.0], 50, 2.5, 0.4, 30.0)
+        self.prev_diff = 0
+        self.i_term = 0
+        self.cali_flag = False
+
+    def generate(self, dist, speed, vehicle_info, action):
+        speed = vehicle_info['ego_v']
+        accel = vehicle_info['ego_a']
+        position = vehicle_info['ego_p']
+        speeds_list, self.prev_diff, self.i_term, self.cali_flag = \
+            self.speed_profile_gen.speed_profile_generation(dist, speed, speed, accel,
+                                                        self.prev_diff, self.i_term, self.cali_flag, False,
+                                                        30.0)
+        speed_profile = [speeds_list, 0.05, vehicle_info['ego_t']]
+        return self._generate(action, speed_profile, position)
+
+    def _generate(self, action, speed_profile, ego_pose):
         # TODO: ego_pose contains time stamp and speed_profile contains global time
         # Now, I take speed profile as [[v1, v2, ..., vn], t_interval, init_t]
         # len vs must > 1
