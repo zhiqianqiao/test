@@ -1,4 +1,4 @@
-from src.states.state_base import State
+from .state_base import State
 __author__ = 'xhou'
 
 

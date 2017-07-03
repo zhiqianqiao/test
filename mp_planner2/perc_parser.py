@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from src.states.state_base import State
+from states.state_base import State
 from predictor import Predictor
 
 __author__ = 'xhou'

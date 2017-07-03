@@ -2,10 +2,10 @@ from tsmap import TSMap
 from map.nav_sub_map import NavMap
 from perc_parser import PercParser
 from predictor import Predictor
-from src.states.state_acc import StateACC
-from src.states.state_base import *
-from src.states.state_turn import StateLTurn, StateRTurn
-from src.traj.traj_generator import TrajGenerator
+from states.state_acc import StateACC
+from states.state_base import *
+from states.state_turn import StateLTurn, StateRTurn
+from traj.traj_generator import TrajGenerator
 
 __author__ = 'xhou'
 
