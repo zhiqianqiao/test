@@ -36,6 +36,9 @@ class NavMap:
     def get_speed_limit(self, loc):
         pass
 
+    def get_virtual_car(self, loc, distance, speed):
+        pass
+
 
 class LaneExtension:
     def __init__(self):

@@ -3,8 +3,8 @@ __author__ = 'xhou'
 
 
 class StateTurn(State):
-    def update(self, loc_hist, in_perc, msg):
-        self.perc_parser.parse(loc_hist, in_perc)
+    def update(self, loc_hist, perc, msg):
+        self.perc_parser.parse(loc_hist, perc)
         cur_state = msg['state']
 
         cur_score = self.perc_parser.safety_check(cur_state, cur_state)
@@ -22,11 +22,11 @@ class StateTurn(State):
         return msg
 
 
-class StateLTurn(StateTurn):
-    def update(self, loc_hist, in_perc, msg):
-        return super(StateLTurn, self).update_generic(self, loc_hist, in_perc, msg)
+class StateLTurn(State):
+    def update(self, loc_hist, perc, msg):
+        return super(StateLTurn, self).update(self, loc_hist, perc, msg)
 
 
-class StateRTurn(StateTurn):
-    def update(self, loc_hist, in_perc, msg):
-        return super(StateRTurn, self).update_generic(self, loc_hist, in_perc, msg)
+class StateRTurn(State):
+    def update(self, loc_hist, perc, msg):
+        return super(StateRTurn, self).update(self, loc_hist, perc, msg)

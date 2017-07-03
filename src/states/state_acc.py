@@ -7,9 +7,17 @@ class StateACC(State):
         # TODO: do it
         pass
 
-    def update(self, loc_hist, in_perc, msg):
+    def update(self, loc_hist, perc, msg):
         msg = {'state': None, 'target_lane': None, 'txt': ''}
         loc = loc_hist[-1]
+
+        self.perc_parser.parse(loc_hist, perc)
+
+        # TODO: Panic check
+        # if self.perc_parser.panic_check():
+        #     msg['state'] = State.defense
+        #     msg['txt'] = 'Panic check failed! Emergency!!!'
+        #     return msg
 
         remain_th = self.p.remain_th
         remain_c_val = self.nav_map.remaining(loc)
@@ -33,14 +41,14 @@ class StateACC(State):
             state_set.add(State.acc)
             if self.perc_parser.front_car_stats() < self.p.min_front_speed:
                 if remain_l:
-                    state_set.add(State.l_turn)
+                    state_set.add(State.l_pre_turn)
                 if remain_r:
-                    state_set.add(State.r_turn)
+                    state_set.add(State.r_pre_turn)
         else:
             if recom_l:
-                state_set.add(State.l_turn)
+                state_set.add(State.l_pre_turn)
             if recom_r:
-                state_set.add(State.r_turn)
+                state_set.add(State.r_pre_turn)
 
         for state in state_set:
             if state not in State.valid_states:
@@ -55,14 +63,16 @@ class StateACC(State):
                 max_score = cur_score
                 best_state = state
 
-        change_lane_pressure = (self.p.remain_th - remain_c_val) / self.p.remain_th * (1 - self.p.min_change_lane_score)
-        if max_score + change_lane_pressure < 1:
-            msg['state'] = State.acc
-            msg['txt'] = 'Change lane not safe, performing fallback plan (ACC)'
-            return msg
+        if best_state in {State.l_pre_turn, State.r_pre_turn}:
+            cl_pressure = (self.p.remain_th - remain_c_val) / self.p.remain_th * self.p.max_cl_pressure
 
-        if best_state in {State.l_turn, State.r_turn}:
-            turn_val = 'l' if best_state == State.l_turn else 'r'
+            if max_score + cl_pressure < self.p.change_lane_th:
+                msg['state'] = State.acc
+                msg['txt'] = 'Planned for lane changing but not safe enough (score: {}, pressure: {}),' \
+                             'performing fallback plan (ACC)'.format(max_score, cl_pressure)
+                return msg
+
+            turn_val = 'l' if best_state == State.l_pre_turn else 'r'
             msg['target_lane'] = self.nav_map.get_extension(self.nav_map.get_par_loc(loc, turn_val))
 
         msg['state'] = best_state

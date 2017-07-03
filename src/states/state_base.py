@@ -1,23 +1,29 @@
-from src.perc_parser import PercParser
 __author__ = 'xhou'
 
 
-class State:
+class State(object):
     l_turn = 'l_turn'
     acc = 'acc'
     r_turn = 'r_turn'
+    l_pre_turn = 'l_pre_turn'
+    r_pre_turn = 'r_pre_turn'
     defense = 'defense'
     term = 'term'
     emergency = 'emergency'
     detour = 'detour'
-    valid_states = {l_turn, r_turn, acc, defense}
+    valid_states = {l_turn, r_turn, l_pre_turn, r_pre_turn, acc, defense}
 
     def __init__(self, nav_map, perc_parser, p):
         self.nav_map = nav_map
         self.perc_parser = perc_parser
         self.p = p
 
-    def update(self, loc_hist, in_perc, msg):
+    def update(self, loc_hist, perc, msg):
+        pass
+
+    @staticmethod
+    def signaling_turn_light(direction, freq):
+        # 'l' or 'r' for left, and right light
         pass
 
 
