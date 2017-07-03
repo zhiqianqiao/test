@@ -3,10 +3,6 @@ __author__ = 'xhou'
 
 
 class StateACC(State):
-    def gen_traj(self):
-        # TODO: do it
-        pass
-
     def update(self, loc_hist, perc, msg):
         msg = {'state': None, 'target_lane': None, 'txt': ''}
         loc = loc_hist[-1]

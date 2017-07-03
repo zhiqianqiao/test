@@ -58,9 +58,9 @@ class PercParser:
             if self.cell_nearest[3]:
                 fv_set.add(self.cell_nearest[3])
             msg = 'Front vehicle in ACC state. {} car(s) found'.format(len(fv_set))
-        if ego_state in {State.l_turn, State.r_turn}:
-            target1 = 1 if ego_state == State.l_turn else 7
-            target2 = 0 if ego_state == State.l_turn else 6
+        if ego_state in {State.l_turn, State.r_turn, State.l_pre_turn, State.r_pre_turn}:
+            target1 = 1 if ego_state in {State.l_turn, State.l_pre_turn} else 7
+            target2 = 0 if ego_state == {State.r_turn, State.r_pre_turn} else 6
             near_car = None
             min_l = np.inf
             for car in set.union(self.cell_pool[target1], {self.cell_nearest[target2], self.cell_nearest[3]}):
@@ -70,25 +70,24 @@ class PercParser:
                     min_l = rel_l
             fv_set = {near_car}
             msg = 'Front vehicle detection turn state.'
-
         if not fv_set:
             fv_set = {self.get_virtual_car(loc, self.p.safe_distance, speed_limit)}
         return fv_set, msg
 
-    def get_virtual_wall(self, loc, ego_v):
-        fv_set, fv_msg = self._get_front_vehicle(loc)
-        wall_speed = np.inf
-        wall_dist = 0
+    def get_virtual_car(self, loc, ego_v, ego_state):
+        fv_set, fv_msg = self._get_front_vehicle(loc, ego_state)
+        virtual_speed = np.inf
+        virtual_dist = 0
         weight = 0
         for car in fv_set:
             conf = car['state_conf']
             weight += conf
-            wall_dist += car['rel_l'] * conf
-            if wall_speed > car['abs_lv']:
-                wall_speed = car['abs_lv']
-        wall_dist /= weight
-        wall_dist -= self.p.safe_distance * ego_v
-        return wall_dist, wall_speed
+            virtual_dist += car['rel_l'] * conf
+            if virtual_speed > car['abs_lv']:
+                virtual_speed = car['abs_lv']
+        virtual_dist /= weight
+        virtual_dist -= self.p.safe_distance * ego_v
+        return virtual_dist, virtual_speed
 
     def parse(self, loc_hist, perc):
         self.perc = perc

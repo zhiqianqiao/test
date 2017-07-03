@@ -27,7 +27,7 @@ class Planner:
         self.state = self.acc
         self.predictor = Predictor()
 
-    def update(self, loc, raw_perc, msg):
+    def update(self, loc, ego_v, raw_perc, msg):
         self.timestamp += 1
         self.loc_hist.append(loc)
         if len(self.loc_hist) > self.p.loc_hist_len:

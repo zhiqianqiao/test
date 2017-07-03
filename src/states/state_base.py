@@ -17,6 +17,8 @@ class State(object):
         self.nav_map = nav_map
         self.perc_parser = perc_parser
         self.p = p
+        self.target_dist = self.p.safe_distance
+        self.target_speed = 30
 
     def update(self, loc_hist, perc, msg):
         pass

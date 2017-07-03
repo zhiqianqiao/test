@@ -4,9 +4,11 @@ __author__ = 'xhou'
 
 class StateTurn(State):
     def update(self, loc_hist, perc, msg):
+        direction = 'l' if msg['state'] == State.l_turn else 'r'
+        State.signaling_turn_light(direction, self.p.light_freq)
+
         self.perc_parser.parse(loc_hist, perc)
         cur_state = msg['state']
-
         cur_score = self.perc_parser.safety_check(cur_state, cur_state)
         if cur_score < self.p.change_lane_interrupt_th:
             msg['state'] = State.defense
