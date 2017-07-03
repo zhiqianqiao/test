@@ -50,13 +50,13 @@ class CarGrid:
         self.max_deceleration = acceleration_limit[0]
         self.max_acceleration = acceleration_limit[1]
 
-        # sys.path.append('./planning/src')
+        # sys.path.append('./planning/mp_planner2')
 
         AD = os.path.dirname(os.path.abspath(__file__))
         rospy.logerr('directtory->' + str(AD))
 
         with open(
-                '/home/ganyq/Documents/June/mp-simworld/src/octopus-planner/src/motion_planner/library/mp-basic-planner/planner/torrey.hdmap',
+                '/home/ganyq/Documents/June/mp-simworld/mp_planner2/octopus-planner/mp_planner2/motion_planner/library/mp-basic-planner/planner/torrey.hdmap',
                 'rb') as f:
             submap = f.read()
         # map = TSMap.deserialize(submap)
