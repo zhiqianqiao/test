@@ -176,7 +176,7 @@ class PercParser:
             safe_condition[1] = {Predictor.r_turn}
             safe_condition[7] = {Predictor.l_turn}
             return self._eval_safe_condition(safe_condition)
-        return False, 'mp_planner2 -- dst combination not supported!'
+        return False, 'src -- dst combination not supported!'
 
     def _density_score(self, cars):
         if len(cars) < 2:
