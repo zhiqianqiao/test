@@ -1,7 +1,7 @@
 from traj_map import TrajMap
 import math
 from tsmap import *
-
+from speed_profile_acc import SpeedProfileACC
 
 class TrajState(object):
     valid = {'acc', 'left', 'right', 'undo'}
@@ -215,14 +215,32 @@ class TrajGenerator(object):
         self.central_distance = None
         self.merge_distance = None
 
-    def generate(self, action, speed_profile, ego_pose):
+        self.speed_profile_gen = SpeedProfileACC([-3.0, 3.0], 50, 2.5, 0.4, 30.0)
+        self.prev_diff = 0
+        self.i_term = 0
+        self.cali_flag = False
+
+        self.action_mapping = {'acc': 'acc', 'l_turn': 'left', "r_turn": 'right', "emergency": 'undo'}
+
+    def generate(self, dist, speed, vehicle_info, action):
+        speed = vehicle_info['ego_v']
+        accel = vehicle_info['ego_a']
+        position = vehicle_info['loc']
+        speeds_list, self.prev_diff, self.i_term, self.cali_flag = \
+            self.speed_profile_gen.speed_profile_generation(dist, speed, speed, accel,
+                                                        self.prev_diff, self.i_term, self.cali_flag, False,
+                                                        30.0)
+        speed_profile = [speeds_list, 0.05, vehicle_info['timestamp']]
+        return self._generate(self.action_mapping[action], speed_profile, position, speed)
+
+    def _generate(self, action, speed_profile, position, speed):
         # TODO: ego_pose contains time stamp and speed_profile contains global time
         # Now, I take speed profile as [[v1, v2, ..., vn], t_interval, init_t]
         # len vs must > 1
         vs, self.t_interval, init_t = speed_profile
-        self.ego_x, self.ego_y = ego_pose.position
+        self.ego_x, self.ego_y = position
         self.acc_shift = self.v_lateral * self.t_interval
-        self.full_profile = self._expand_profile(vs, ego_pose.speed)
+        self.full_profile = self._expand_profile(vs, speed)
         new_state, points = self.state.update(action, self)
         self.state = eval('self.' + new_state)
         if new_state == 'm0' or new_state == 'm1':
