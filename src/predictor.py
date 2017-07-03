@@ -153,6 +153,18 @@ class Predictor:
                'state_conf': state_conf}
         return ret
 
+    def _wrap_mock(self, data):
+        ret = {'rel_x': [pos[0] for pos in data['pos']],
+               'rel_y': [pos[1] for pos in data['pos']],
+               'rel_xv': [pos[0] for pos in data['vel']],
+               'rel_yv': [pos[1] for pos in data['vel']],
+               'rel_l': [pos[0] for pos in data['pos']],
+               'rel_d': [pos[1] for pos in data['pos']],
+               'rel_lv': [pos[0] for pos in data['vel']],
+               'rel_dv': [pos[1] for pos in data['vel']],
+               'state': Predictor.unknown}
+        return ret
+
     def update(self, raw_perc, ts):
         """
         :param ts: timestamp of raw_perc
@@ -172,6 +184,7 @@ class Predictor:
                 is_reckless, reckless_conf = self._is_reckless(traj_id)
                 state[-1] = is_reckless
                 state_conf[-1] *= reckless_conf
-            processed_perc[traj_id] = self._wrap_ret_perc(perc, state, state_conf)
+            # processed_perc[traj_id] = self._wrap_ret_perc(perc, state, state_conf)
+            processed_perc[traj_id] = self._wrap_mock(perc)
         return processed_perc
 
