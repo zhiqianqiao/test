@@ -154,17 +154,9 @@ class Predictor:
         return ret
 
     def _wrap_mock(self, data):
-        ret = {'rel_x': [pos[0] for pos in data['pos']],
-               'rel_y': [pos[1] for pos in data['pos']],
-               'rel_xv': [pos[0] for pos in data['vel']],
-               'rel_yv': [pos[1] for pos in data['vel']],
-               'rel_l': [pos[0] for pos in data['pos']],
-               'rel_d': [pos[1] for pos in data['pos']],
-               'rel_lv': [pos[0] for pos in data['vel']],
-               'rel_dv': [pos[1] for pos in data['vel']],
-               'state': Predictor.unknown}
-        return ret
-
+        data['state'] = Predictor.unknown
+        return data
+    
     def update(self, raw_perc, ts):
         """
         :param ts: timestamp of raw_perc
