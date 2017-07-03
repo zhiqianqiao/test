@@ -3,8 +3,10 @@ __author__ = 'xhou'
 
 
 class StateACC(State):
-    def update(self, loc_hist, perc, msg):
+    def update(self, vehicle_info, perc, msg):
         msg = {'state': None, 'target_lane': None, 'txt': ''}
+        loc_hist = vehicle_info['loc_hist']
+        ego_v = vehicle_info['ego_v']
         loc = loc_hist[-1]
 
         self.perc_parser.parse(loc_hist, perc)
@@ -20,6 +22,7 @@ class StateACC(State):
         if remain_c_val < self.p.critical_remain_th:
             msg['state'] = State.detour
             msg['txt'] = 'Lane extension too short to peform change lane. Exiting navigation and prepare detour...'
+            msg['traj'] = []
             return msg
 
         remain_c = remain_c_val >= remain_th
@@ -30,6 +33,7 @@ class StateACC(State):
         if recom_c and (not remain_c):
             msg['state'] = State.term
             msg['txt'] = 'Termination point within reach. Exiting navigation...'
+            msg['traj'] = []
             return msg
 
         state_set = set()
@@ -50,6 +54,7 @@ class StateACC(State):
             if state not in State.valid_states:
                 msg['state'] = State.emergency
                 msg['txt'] = 'Unknown critical error. Possible bugs from NavMap. Exiting navigation...'
+                msg['traj'] = []
                 return msg
 
         max_score = 0
@@ -61,11 +66,13 @@ class StateACC(State):
 
         if best_state in {State.l_pre_turn, State.r_pre_turn}:
             cl_pressure = (self.p.remain_th - remain_c_val) / self.p.remain_th * self.p.max_cl_pressure
-
             if max_score + cl_pressure < self.p.change_lane_th:
-                msg['state'] = State.acc
+                best_state = State.acc
+                msg['state'] = best_state
                 msg['txt'] = 'Planned for lane changing but not safe enough (score: {}, pressure: {}),' \
                              'performing fallback plan (ACC)'.format(max_score, cl_pressure)
+                virtual_dist, virtual_speed = self.perc_parser.get_virtual_car(vehicle_info, best_state)
+                msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, vehicle_info, best_state)
                 return msg
 
             turn_val = 'l' if best_state == State.l_pre_turn else 'r'
@@ -73,4 +80,6 @@ class StateACC(State):
 
         msg['state'] = best_state
         msg['txt'] = 'Best state successfully derived'
+        virtual_dist, virtual_speed = self.perc_parser.get_virtual_car(vehicle_info, best_state)
+        msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, vehicle_info, best_state)
         return msg

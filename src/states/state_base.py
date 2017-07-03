@@ -13,19 +13,19 @@ class State(object):
     detour = 'detour'
     valid_states = {l_turn, r_turn, l_pre_turn, r_pre_turn, acc, defense}
 
-    def __init__(self, nav_map, perc_parser, p):
+    def __init__(self, nav_map, perc_parser, traj_gen, p):
         self.nav_map = nav_map
         self.perc_parser = perc_parser
+        self.traj_gen = traj_gen
         self.p = p
-        self.target_dist = self.p.safe_distance
-        self.target_speed = 30
+        self.start_time = -1
 
-    def update(self, loc_hist, perc, msg):
+    def update(self, vehicle_info, perc, msg):
         pass
 
     @staticmethod
-    def signaling_turn_light(direction, freq):
-        # 'l' or 'r' for left, and right light
+    def signaling_turn_light(state, freq):
+        # state in {State.l_turn, State.r_turn}
         pass
 
 

@@ -1,7 +1,9 @@
 import math
+
+import numpy as np
+
 from src.states.state_base import State
 from predictor import Predictor
-import numpy as np
 
 __author__ = 'xhou'
 
@@ -74,7 +76,10 @@ class PercParser:
             fv_set = {self.get_virtual_car(loc, self.p.safe_distance, speed_limit)}
         return fv_set, msg
 
-    def get_virtual_car(self, loc, ego_v, ego_state):
+    def get_virtual_car(self, vehicle_info, ego_state):
+        loc = vehicle_info['loc']
+        ego_v = vehicle_info['ego_v']
+
         fv_set, fv_msg = self._get_front_vehicle(loc, ego_state)
         virtual_speed = np.inf
         virtual_dist = 0
