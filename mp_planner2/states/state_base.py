@@ -20,6 +20,9 @@ class State(object):
         self.p = p
         self.start_time = -1
 
+    def update_map(self, nav_map):
+        self.nav_map = nav_map
+        
     def update(self, vehicle_info, perc, msg):
         pass
 
