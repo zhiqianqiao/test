@@ -196,7 +196,7 @@ class TrajGenerator(object):
 
         self.state = self.acc
 
-        self.map_handler = TrajMap(tsmap_handler)
+        self.map_handler = TrajMap()
 
         self._kp1 = None
         self._kp2 = None
@@ -221,6 +221,9 @@ class TrajGenerator(object):
         self.cali_flag = False
 
         self.action_mapping = {'acc': 'acc', 'l_turn': 'left', "r_turn": 'right', "emergency": 'undo'}
+
+    def update(self, tsmap_handler):
+        self.map_handler.update(tsmap_handler)
 
     def generate(self, dist, speed, vehicle_info, action):
         speed = vehicle_info['ego_v']

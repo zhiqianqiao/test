@@ -5,7 +5,11 @@ import math
 class TrajMap(object):
 
 
-    def __init__(self, tsmap_handler):
+    def __init__(self):
+        self.handler = None
+        self.heading_dist = None
+
+    def update(self, tsmap_handler):
         self.handler = tsmap_handler
         self.heading_dist = 1.2 * tsmap_handler.REF_PT_GAP
 
