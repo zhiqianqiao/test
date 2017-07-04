@@ -13,8 +13,8 @@ class State(object):
     detour = 'detour'
     valid_states = {l_turn, r_turn, l_pre_turn, r_pre_turn, acc, defense}
 
-    def __init__(self, nav_map, perc_parser, traj_gen, p):
-        self.nav_map = nav_map
+    def __init__(self, perc_parser, traj_gen, p):
+        self.nav_map = None
         self.perc_parser = perc_parser
         self.traj_gen = traj_gen
         self.p = p

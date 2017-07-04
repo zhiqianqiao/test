@@ -188,7 +188,7 @@ class Fail(TrajState):
 
 class TrajGenerator(object):
 
-    def __init__(self, tsmap_handler):
+    def __init__(self):
         self.acc = Acc()
         self.m0 = Merge0()
         self.m1 = Merge1()
@@ -203,7 +203,7 @@ class TrajGenerator(object):
         self.v_lateral = 0.5
         self.cancel_rate = 2.0
         self.adj_lim = 0.3
-        self.change_x_speed = self.map_handler.lane_width / 4
+        self.change_x_speed = 3.75 / 4.0
 
         self.min_forward = 2.0
 
