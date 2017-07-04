@@ -239,7 +239,10 @@ class PercParser:
             cars = set.union(self.cell_pool[6], self.cell_pool[7], self.cell_pool[8])
         if dst_state == State.acc:
             cars = set.union(self.cell_pool[3], self.cell_pool[4], self.cell_pool[5])
-        density_score, density_msg = self._density_score(cars)
-        rel_diff_score, rel_diff_msg = self._rel_diff_score(cars)
+        try:
+            density_score, density_msg = self._density_score(cars)
+            rel_diff_score, rel_diff_msg = self._rel_diff_score(cars)
+        except:
+            a = 12
 
         return (density_score + rel_diff_score) / 2, '\n'.join([density_msg, rel_diff_msg])

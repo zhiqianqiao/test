@@ -48,7 +48,7 @@ class Planner:
     def update(self, loc, ego_v, raw_perc, msg):
         self.loc_hist.append(loc)
         if len(self.loc_hist) > self.p.loc_hist_len:
-            self.loc_hist = self.loc_hist[-self.p.loc_hist_len]
+            self.loc_hist = self.loc_hist[-self.p.loc_hist_len:]
         self.timestamp += 1
 
         vehicle_info = dict()

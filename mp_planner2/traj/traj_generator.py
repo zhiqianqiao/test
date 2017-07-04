@@ -249,10 +249,10 @@ class TrajGenerator(object):
         speed_profile = [speeds_list, 0.05, vehicle_info['timestamp']]
 
         traj, traj_flag = self._generate(self.action_mapping[action], speed_profile, position, ego_speed)
-        print '\n'.join(['Distance: {}'.format(dist), 'Target speed: {}'.format(target_speed),
-                         'Ego speed: {}'.format(ego_speed), 'Action: {}'.format(action),
-                         'Acceleration: {}'.format(traj[0]['pose']['acceleration'])])
-        print speeds_list
+        # print '\n'.join(['Distance: {}'.format(dist), 'Target speed: {}'.format(target_speed),
+        #                  'Ego speed: {}'.format(ego_speed), 'Action: {}'.format(action),
+        #                  'Acceleration: {}'.format(traj[0]['pose']['acceleration'])])
+        # print speeds_list
 
 
         # plot_acc(traj, vehicle_info)
