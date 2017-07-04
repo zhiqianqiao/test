@@ -17,6 +17,13 @@ class TrajMap(object):
     def lane_width(self):
         return self.handler.LANE_WIDTH
 
+    def get_heading(self, x, y):
+        p = Point3d(x, y, 0.0)
+        lane = self.handler.get_lane(p)
+        ref_pt = lane.get_ref_pt(p)
+        # lane = self.handler.get_lane(p)
+        return self._get_heading(lane, ref_pt)
+
     def _get_heading(self, lane, ref_pt):
         temp_p, dist = lane.move_forward(ref_pt, self.heading_dist)
         if dist > 0.01:
@@ -27,7 +34,7 @@ class TrajMap(object):
         heading = math.atan2(delta_p.y, delta_p.x)
         return heading
 
-    def navigate_by_centrals(self, x, y, centrals, ls, drct, thresh=0):
+    def _navigate_by_centrals(self, x, y, centrals, ls, drct, thresh=0):
         """
         navigate from (x, y), along the lane, and sample according to centrals
         :param x:
@@ -70,6 +77,43 @@ class TrajMap(object):
                 lane_length = lane.get_dist_to_end(lane.start_pt)
             points.append(self._get_point_by_lane_coord(lane, adaptive_dist, lateral))
         return points, d
+
+    def navigate_by_centrals(self, x, y, centrals, ls, drct, thresh=0):
+        lane, l, d = self._get_lane_coord(x, y)
+        points = [[x, y, 0]]
+        old_d = d
+        new_d = d
+        last_central = 0
+        for central in centrals:
+            delta_central = central - last_central
+            old_d = new_d
+            if drct == -1 and old_d > 0:
+                new_d = old_d - ls
+                if new_d < -thresh:
+                    new_d = -thresh
+            elif drct == 0:
+                if old_d > ls:
+                    new_d = old_d - ls
+                elif old_d < -ls:
+                    new_d = old_d + ls
+                else:
+                    new_d = 0.0
+            elif drct == 1 and old_d < 0:
+                new_d = old_d + ls
+                if new_d > thresh:
+                    new_d = thresh
+            lateral = new_d - old_d
+            o_x, o_y, _ = points[-1]
+            heading = self.get_heading(o_x, o_y)
+            n_x = o_x + delta_central * math.cos(heading)
+            n_y = o_y + delta_central * math.sin(heading)
+            last_central = central
+            n_x += lateral * math.sin(heading)
+            n_y -= lateral * math.cos(heading)
+            points.append([n_x, n_y, heading])
+        return points[1:], d
+
+
 
     def _get_lane_coord(self, x, y):
         p = Point3d(x, y, 0)

@@ -2,6 +2,9 @@ from traj_map import TrajMap
 import math
 from tsmap import *
 from speed_profile_acc import SpeedProfileACC
+from matplotlib import pyplot as plt
+
+
 
 class TrajState(object):
     valid = {'acc', 'left', 'right', 'undo'}
@@ -186,6 +189,14 @@ class Fail(TrajState):
         raise Exception("Finite State Machine Has Failed on", action)
 
 
+def plot_acc(traj, vehicle_info):
+    ego_x, ego_y = vehicle_info['loc_hist'][0]
+    pos_x = [x['pose']['position'][0] - ego_x for x in traj]
+    pos_y = [x['pose']['position'][1] - ego_y for x in traj]
+    speed = [x['pose']['speed'] for x in traj]
+    heading = [x['pose']['heading'] for x in traj]
+    plt.plot(pos_x, pos_y)
+
 class TrajGenerator(object):
 
     def __init__(self):
@@ -200,7 +211,7 @@ class TrajGenerator(object):
 
         self._kp1 = None
         self._kp2 = None
-        self.v_lateral = 0.5
+        self.v_lateral = 0.05
         self.cancel_rate = 2.0
         self.adj_lim = 0.3
         self.change_x_speed = 3.75 / 4.0
@@ -225,25 +236,37 @@ class TrajGenerator(object):
     def update(self, tsmap_handler):
         self.map_handler.update(tsmap_handler)
 
-    def generate(self, dist, speed, vehicle_info, action):
-        speed = vehicle_info['ego_v']
-        accel = vehicle_info['ego_a']
-        position = vehicle_info['loc']
+    def generate(self, dist, target_speed, vehicle_info, action):
+        dist /= 10
+        ego_speed = vehicle_info['ego_v']
+        # TODO: acceleration?
+        accel = 0
+        position = vehicle_info['loc_hist'][-1]
         speeds_list, self.prev_diff, self.i_term, self.cali_flag = \
-            self.speed_profile_gen.speed_profile_generation(dist, speed, speed, accel,
-                                                        self.prev_diff, self.i_term, self.cali_flag, False,
-                                                        30.0)
+            self.speed_profile_gen.speed_profile_generation(dist, target_speed, ego_speed, accel,
+                                                            self.prev_diff, self.i_term, self.cali_flag, False,
+                                                            30.0)
         speed_profile = [speeds_list, 0.05, vehicle_info['timestamp']]
-        return self._generate(self.action_mapping[action], speed_profile, position, speed)
 
-    def _generate(self, action, speed_profile, position, speed):
+        traj, traj_flag = self._generate(self.action_mapping[action], speed_profile, position, ego_speed)
+        print '\n'.join(['Distance: {}'.format(dist), 'Target speed: {}'.format(target_speed),
+                         'Ego speed: {}'.format(ego_speed), 'Action: {}'.format(action),
+                         'Acceleration: {}'.format(traj[0]['pose']['acceleration'])])
+        print speeds_list
+
+
+        # plot_acc(traj, vehicle_info)
+
+        return traj, traj_flag
+
+    def _generate(self, action, speed_profile, position, ego_speed):
         # TODO: ego_pose contains time stamp and speed_profile contains global time
         # Now, I take speed profile as [[v1, v2, ..., vn], t_interval, init_t]
         # len vs must > 1
         vs, self.t_interval, init_t = speed_profile
         self.ego_x, self.ego_y = position
         self.acc_shift = self.v_lateral * self.t_interval
-        self.full_profile = self._expand_profile(vs, speed)
+        self.full_profile = self._expand_profile(vs, ego_speed)
         new_state, points = self.state.update(action, self)
         self.state = eval('self.' + new_state)
         if new_state == 'm0' or new_state == 'm1':
@@ -263,7 +286,7 @@ class TrajGenerator(object):
             traj.append({'pose': {'position': [x, y], 'speed': math.sqrt((nx - x) ** 2 + (ny - y) ** 2) / self.t_interval, 'heading': heading, 'curvature': 0.0, 'jerk': 0.0},
                           'time': self.full_profile[index][2]})
         for i in xrange(len(traj) - 1):
-            traj[i]['pose']['acceleration'] = (traj[i + 1]['pose']['speed'] - traj[i]['pose']['speed']) / self.t_interval
+            traj[i]['pose']['acceleration'] = (traj[i + 1]['pose']['speed'] - traj[i]['pose']['speed']) * math.cos(self.map_handler.get_heading(*traj[i]['pose']['position']) - traj[i]['pose']['heading']) / self.t_interval
         traj[-1]['pose']['acceleration'] = traj[-2]['pose']['acceleration']
 
 
@@ -411,7 +434,7 @@ class TrajGenerator(object):
             points[idx][2] = math.atan2(points[idx+1][1] - points[idx][1], points[idx+1][0] - points[idx+1][0])
 
 
-if __name__ == '__main__':
+def main():
     map_path = '/mnt/truenas/scratch/data/map/hdmap/data/MAP_new/torrey.hdmap'
     class T:
         def __init__(self, x, y, s):
@@ -497,3 +520,7 @@ if __name__ == '__main__':
     # plt.plot(kp3x, kp3y)
     # plt.plot(kp4x, kp4y)
     plt.show()
+
+
+if __name__ == '__main__':
+    main()
