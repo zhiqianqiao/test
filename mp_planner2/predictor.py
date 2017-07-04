@@ -67,9 +67,15 @@ class Predictor:
             rel_x1, rel_y1 = abs_x - x, abs_y - y
             rel_x, rel_y = ch * rel_x1 - sh * rel_y1, sh * rel_x1 + ch * rel_y1
             # rel_y, rel_x = -ch * rel_x1 + sh * rel_y1, sh * rel_x1 + ch * rel_y1
-            proc_perc[car_id] = {'rel_x': rel_x, 'rel_y': rel_y, 'rel_xv': car_dict['rel_xv'],
-                                 'rel_yv': car_dict['rel_yv'], 'state': Predictor.unknown,
+            proc_perc[car_id] = {'rel_x': rel_x, 'rel_y': rel_y,
+                                 'rel_xv': car_dict['rel_xv'], 'rel_yv': car_dict['rel_yv'],
+                                 'rel_l': rel_x, 'rel_d': rel_y,
+                                 'rel_lv': car_dict['rel_xv'], 'rel_dv': car_dict['rel_yv'],
                                  'abs_x': abs_x, 'abs_y': abs_y}
+            proc_perc[car_id]['state'] = dict()
+            for cur_state in Predictor.all_states:
+                proc_perc[car_id]['state'][cur_state] = False
+            proc_perc[car_id]['state'][Predictor.unknown] = True
         return proc_perc
 
     def __update(self, new_perc, ts):
