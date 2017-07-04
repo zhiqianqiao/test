@@ -5,6 +5,8 @@ import numpy as np
 from states.state_base import State
 from predictor import Predictor
 
+from tsmap import Point3d
+
 __author__ = 'xhou'
 
 
@@ -24,19 +26,21 @@ class PercParser:
     def update_map(self, nav_map):
         self.nav_map = nav_map
 
-    def init_cells(self, loc):
+    def init_cells(self, v_info):
+        speed = v_info['speed']
+        loc = v_info['abs_loc']
         p = self.p
-        cell_upper = np.ones(p.cell_num) * p.cell_border_1
-        cell_lower = np.ones(p.cell_num) * p.cell_border_6
+        cell_upper = np.ones(p.cell_num) * p.cell_border_1 * speed
+        cell_lower = np.ones(p.cell_num) * p.cell_border_6 * speed
 
-        cell_upper[[1, 7, 9, 10]] = p.cell_border_2
-        cell_upper[4] = p.cell_border_3
-        cell_upper[[2, 5, 8]] = p.cell_border_5
+        cell_upper[[1, 7, 9, 10]] = p.cell_border_2 * speed
+        cell_upper[4] = p.cell_border_3 * speed
+        cell_upper[[2, 5, 8]] = p.cell_border_5 * speed
 
-        cell_lower[[0, 6]] = p.cell_border_2
-        cell_lower[3] = p.cell_border_3
-        cell_lower[[9, 10]] = p.cell_border_4
-        cell_lower[[1, 4, 7]] = p.cell_border_5
+        cell_lower[[0, 6]] = p.cell_border_2 * speed
+        cell_lower[3] = p.cell_border_3 * speed
+        cell_lower[[9, 10]] = p.cell_border_4 * speed
+        cell_lower[[1, 4, 7]] = p.cell_border_5 * speed
 
         l_loc = self.nav_map.get_par_loc(loc, 'l')
         r_loc = self.nav_map.get_par_loc(loc, 'r')
@@ -77,9 +81,9 @@ class PercParser:
             fv_set.remove(None)
         return fv_set, msg
 
-    def get_front_vehicle(self, vehicle_info, planned_state):
-        loc = vehicle_info['loc_hist'][-1]
-        ego_v = vehicle_info['ego_v']
+    def get_front_vehicle(self, v_info, planned_state):
+        loc = v_info['abs_loc']
+        ego_v = v_info['speed']
 
         fv_set, fv_msg = self._get_fv_set(loc, planned_state)
 
@@ -97,23 +101,26 @@ class PercParser:
         if target_car:
             return target_car['rel_l'], target_car['abs_lv']
         else:
-            speed_limit = vehicle_info['ego_v'] - 3
+            # TODO: change back when debug is done
+            speed_limit = self.nav_map.get_speed_limit(loc)
+            # speed_limit = v_info['speed'] - 3
             return self.p.safe_buffer_time * speed_limit, speed_limit
 
-    def parse(self, loc_hist, perc):
+    def parse(self, v_info, perc):
         self.perc = perc
-        loc = loc_hist[-1]
-        self.init_cells(loc)
+        self.init_cells(v_info)
 
-        self.cell_pool = [set() for i in range(self.p.cell_num)]
+        self.cell_pool = [list() for i in range(self.p.cell_num)]
         self.cell_nearest = [None] * self.p.cell_num
         self.cell_status = [set() for i in range(self.p.cell_num)]
 
         for car_id, car in perc.iteritems():
             for cell_itr, cur_lane_ext in enumerate(self.cells):
                 car_loc = [car['abs_x'], car['abs_y']]
-                if cur_lane_ext.contains_loc(car_loc):
-                    self.cell_pool[cell_itr].add(car_id)
+                p = Point3d(car_loc[0], car_loc[1], 0)
+                # TODO: clean up this shit!
+                if cur_lane_ext.contains_loc(self.nav_map.submap.get_lane(p), p):
+                    self.cell_pool[cell_itr].append(car)
                     break
 
         for cell_itr, cars in enumerate(self.cell_pool):
@@ -233,16 +240,12 @@ class PercParser:
         if not cond_flag:
             return 0, cond_msg
 
-        if dst_state == State.l_turn:
-            cars = set.union(self.cell_pool[0], self.cell_pool[1], self.cell_pool[2])
-        if dst_state == State.r_turn:
-            cars = set.union(self.cell_pool[6], self.cell_pool[7], self.cell_pool[8])
+        if dst_state in {State.l_turn, State.l_pre_turn}:
+            cars = self.cell_pool[0] + self.cell_pool[1] + self.cell_pool[2]
+        if dst_state in {State.r_turn, State.r_pre_turn}:
+            cars = self.cell_pool[6] + self.cell_pool[7] + self.cell_pool[8]
         if dst_state == State.acc:
-            cars = set.union(self.cell_pool[3], self.cell_pool[4], self.cell_pool[5])
-        try:
-            density_score, density_msg = self._density_score(cars)
-            rel_diff_score, rel_diff_msg = self._rel_diff_score(cars)
-        except:
-            a = 12
-
+            cars = self.cell_pool[3] + self.cell_pool[4] + self.cell_pool[5]
+        density_score, density_msg = self._density_score(cars)
+        rel_diff_score, rel_diff_msg = self._rel_diff_score(cars)
         return (density_score + rel_diff_score) / 2, '\n'.join([density_msg, rel_diff_msg])

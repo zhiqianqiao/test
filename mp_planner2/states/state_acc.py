@@ -3,13 +3,11 @@ __author__ = 'xhou'
 
 
 class StateACC(State):
-    def update(self, vehicle_info, perc, msg):
+    def update(self, v_info, perc, msg):
         msg = {'state': None, 'target_lane': None, 'txt': ''}
-        loc_hist = vehicle_info['loc_hist']
-        ego_v = vehicle_info['ego_v']
-        loc = loc_hist[-1]
+        loc = v_info['abs_loc']
 
-        self.perc_parser.parse(loc_hist, perc)
+        self.perc_parser.parse(v_info, perc)
 
         # TODO: Panic check
         # if self.perc_parser.panic_check():
@@ -40,7 +38,7 @@ class StateACC(State):
         if remain_c:
             state_set.add(State.acc)
             # if self.perc_parser.front_car_stats() < self.p.min_front_speed:
-            if False:
+            if True:
                 if remain_l:
                     state_set.add(State.l_pre_turn)
                 if remain_r:
@@ -58,12 +56,19 @@ class StateACC(State):
                 msg['traj'] = []
                 return msg
 
+        score_dict = dict()
         max_score = -100
         for state in state_set:
-            cur_score, whatever = self.perc_parser.safety_check(State.acc, state)
+            cur_score, _ = self.perc_parser.safety_check(State.acc, state)
+            score_dict[state] = cur_score
             if cur_score > max_score:
                 max_score = cur_score
                 best_state = state
+
+        rviz_str = []
+        for state, state_score in score_dict.iteritems():
+            rviz_str.append('{}: {}'.format(state, state_score))
+        msg['rviz'] = '\n'.join(rviz_str)
 
         if best_state in {State.l_pre_turn, State.r_pre_turn}:
             cl_pressure = (self.p.remain_th - remain_c_val) / self.p.remain_th * self.p.max_cl_pressure
@@ -72,8 +77,8 @@ class StateACC(State):
                 msg['state'] = best_state
                 msg['txt'] = 'Planned for lane changing but not safe enough (score: {}, pressure: {}),' \
                              'performing fallback plan (ACC)'.format(max_score, cl_pressure)
-                virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(vehicle_info, best_state)
-                msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, vehicle_info, best_state)
+                virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(v_info, best_state)
+                msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, v_info, best_state)
                 return msg
 
             turn_val = 'l' if best_state == State.l_pre_turn else 'r'
@@ -81,6 +86,6 @@ class StateACC(State):
 
         msg['state'] = best_state
         msg['txt'] = 'Best state successfully derived'
-        virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(vehicle_info, best_state)
-        msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, vehicle_info, best_state)
+        virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(v_info, best_state)
+        msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, v_info, best_state)
         return msg

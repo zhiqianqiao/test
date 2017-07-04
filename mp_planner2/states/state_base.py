@@ -23,7 +23,7 @@ class State(object):
     def update_map(self, nav_map):
         self.nav_map = nav_map
         
-    def update(self, vehicle_info, perc, msg):
+    def update(self, v_info, perc, msg):
         pass
 
     @staticmethod

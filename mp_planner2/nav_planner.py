@@ -45,21 +45,19 @@ class Planner:
 
         self.perc_parser.update_map(nav_map)
 
-    def update(self, loc, ego_v, raw_perc, msg):
+    def update(self, v_info, raw_perc, msg):
+        v_info['timestamp'] = self.timestamp
+        loc = v_info['abs_loc']
+
         self.loc_hist.append(loc)
         if len(self.loc_hist) > self.p.loc_hist_len:
             self.loc_hist = self.loc_hist[-self.p.loc_hist_len:]
         self.timestamp += 1
 
-        vehicle_info = dict()
-        vehicle_info['loc_hist'] = self.loc_hist
-        vehicle_info['ego_v'] = ego_v
-        vehicle_info['timestamp'] = self.timestamp
-
-        perc = self.predictor.update(raw_perc, self.timestamp)
-
-        msg = self.state.update(vehicle_info, perc, msg)
-
+        perc = self.predictor.update(v_info, raw_perc, self.timestamp)
+        try:
+            msg = self.state.update(v_info, perc, msg)
+        except:
+            a = 12
         self.state = getattr(self, msg['state'])
-
         return msg

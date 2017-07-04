@@ -3,13 +3,13 @@ __author__ = 'xhou'
 
 
 class StateTurn(State):
-    def update(self, vehicle_info, perc, msg):
-        loc_hist = vehicle_info['loc_hist']
+    def update(self, v_info, perc, msg):
+        loc = v_info['abs_loc']
         cur_state = msg['state']
 
         State.signaling_turn_light(cur_state, self.p.light_freq)
 
-        self.perc_parser.parse(loc_hist, perc)
+        self.perc_parser.parse(v_info, perc)
         cur_state = msg['state']
         cur_score = self.perc_parser.safety_check(cur_state, cur_state)
         if cur_score < self.p.change_lane_interrupt_th:
@@ -19,8 +19,8 @@ class StateTurn(State):
             msg['txt'] = 'Lane change interupted. Switching to defensive driving mode...'
             return msg
 
-        virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(vehicle_info, cur_state)
-        msg['traj'], is_finished = self.traj_gen.generate(virtual_dist, virtual_speed, vehicle_info, cur_state)
+        virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(v_info, cur_state)
+        msg['traj'], is_finished = self.traj_gen.generate(virtual_dist, virtual_speed, v_info, cur_state)
         if is_finished:
             msg['state'] = State.acc
             msg['target_lane'] = None
@@ -31,10 +31,10 @@ class StateTurn(State):
 
 
 class StateLTurn(State):
-    def update(self, vehicle_info, perc, msg):
-        return super(StateLTurn, self).update(self, vehicle_info, perc, msg)
+    def update(self, v_info, perc, msg):
+        return super(StateLTurn, self).update(self, v_info, perc, msg)
 
 
 class StateRTurn(State):
-    def update(self, vehicle_info, perc, msg):
-        return super(StateRTurn, self).update(self, vehicle_info, perc, msg)
+    def update(self, v_info, perc, msg):
+        return super(StateRTurn, self).update(self, v_info, perc, msg)
