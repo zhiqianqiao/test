@@ -18,6 +18,7 @@ class Predictor:
     r_turn = 'r_turn'
     unknown = 'unknown'
     reckless = 'reckless'
+    all_states = {normal, overspeed, underspeed, l_turn, r_turn, unknown, reckless}
 
     '''
     For each car:

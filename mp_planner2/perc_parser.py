@@ -54,13 +54,11 @@ class PercParser:
             return loc
         return [loc.x, loc.y]
 
-    def get_front_car(self, loc, ego_state):
-        speed_limit = 40 #self.nav_map.get_speed_limit(loc)
-
+    def _get_fv_set(self, loc, planned_state):
         fv_set = set()
-        if ego_state not in State.valid_states:
+        if planned_state not in State.valid_states:
             return set(), 'Ego-state not supported!'
-        if ego_state == State.acc:
+        if planned_state == State.acc:
             for car in self.cell_pool[1]:
                 if car['state'][Predictor.r_turn]:
                     fv_set.add(car)
@@ -69,77 +67,41 @@ class PercParser:
                     fv_set.add(car)
             if self.cell_nearest[3]:
                 fv_set.add(self.cell_nearest[3])
-            msg = 'Front vehicle in ACC state. {} car(s) found'.format(len(fv_set))
-        if ego_state in {State.l_turn, State.r_turn, State.l_pre_turn, State.r_pre_turn}:
-            target1 = 1 if ego_state in {State.l_turn, State.l_pre_turn} else 7
-            target2 = 0 if ego_state == {State.r_turn, State.r_pre_turn} else 6
-            near_car = None
-            min_l = np.inf
-            for car in set.union(self.cell_pool[target1], {self.cell_nearest[target2], self.cell_nearest[3]}):
-                rel_l = car['rel_l']
-                if 0 < rel_l < min_l:
-                    near_car = car
-                    min_l = rel_l
-            fv_set = {near_car}
-            msg = 'Front vehicle detection turn state.'
-        if not fv_set:
-            ##TODO: fix it
-            fv_set = {self.nav_map.get_virtual_car(loc, self.p.safe_distance, speed_limit)}
-            ##TODO: FIX it
-            # fv_set = {self.nav_map.get_virtual_car(loc, self.p.safe_distance)}
+            msg = 'Front vehicle detected in ACC state. {} car(s) found'.format(len(fv_set))
+        if planned_state in {State.l_turn, State.r_turn, State.l_pre_turn, State.r_pre_turn}:
+            target_cell_id = 0 if planned_state in {State.l_turn, State.l_pre_turn} else 6
+            fv_set = {self.cell_nearest[target_cell_id], self.cell_nearest[3]}
+            msg = 'Front vehicle detected in turning state. {} car(s) found'.format(len(fv_set))
+
+        if None in fv_set:
+            fv_set.remove(None)
         return fv_set, msg
 
-    def _get_front_vehicle(self, loc, ego_state):
-        speed_limit = self.nav_map.get_speed_limit(loc)
-        fv_set = set()
-
-        if ego_state not in State.valid_states:
-            return set(), 'Ego-state not supported!'
-        if ego_state == State.acc:
-            for car in self.cell_pool[1]:
-                if car['state'][Predictor.r_turn]:
-                    fv_set.add(car)
-            for car in self.cell_pool[7]:
-                if car['state'][Predictor.l_turn]:
-                    fv_set.add(car)
-            if self.cell_nearest[3]:
-                fv_set.add(self.cell_nearest[3])
-            msg = 'Front vehicle in ACC state. {} car(s) found'.format(len(fv_set))
-        if ego_state in {State.l_turn, State.r_turn, State.l_pre_turn, State.r_pre_turn}:
-            target1 = 1 if ego_state in {State.l_turn, State.l_pre_turn} else 7
-            target2 = 0 if ego_state == {State.r_turn, State.r_pre_turn} else 6
-            near_car = None
-            min_l = np.inf
-            for car in set.union(self.cell_pool[target1], {self.cell_nearest[target2], self.cell_nearest[3]}):
-                rel_l = car['rel_l']
-                if 0 < rel_l < min_l:
-                    near_car = car
-                    min_l = rel_l
-            fv_set = {near_car}
-            msg = 'Front vehicle detection turn state.'
-        if not fv_set:
-            ##TODO: fix it
-            fv_set = {self.nav_map.get_virtual_car(loc, self.p.safe_distance, speed_limit)}
-            ##TODO: FIX it
-            # fv_set = {self.nav_map.get_virtual_car(loc, self.p.safe_distance)}
-        return fv_set, msg
-
-    def get_virtual_car(self, vehicle_info, ego_state):
+    def get_front_vehicle(self, vehicle_info, planned_state):
         loc = vehicle_info['loc_hist'][-1]
         ego_v = vehicle_info['ego_v']
 
-        fv_set, fv_msg = self._get_front_vehicle(loc, ego_state)
-        virtual_speed = np.inf
-        virtual_dist = 0
-        weight = 0
+        fv_set, fv_msg = self._get_fv_set(loc, planned_state)
+
+        min_crash_time = np.inf
+        target_car = None
         for car in fv_set:
-            conf = car['state_conf']
-            weight += conf
-            virtual_dist += car['rel_l'] * conf
-            if virtual_speed > car['abs_lv']:
-                virtual_speed = car['abs_lv']
+            rel_speed = car['abs_lv'] - ego_v
+            rel_distance = car['rel_l']
+            crash_time = rel_distance / rel_speed
+            if 0 < crash_time < min_crash_time:
+                target_car = car
+                min_crash_time = crash_time
+
+        if min_crash_time >
+
+
+        speed_limit = 40    # self.nav_map.get_speed_limit(loc)
+        virtual_speed = speed_limit
+        virtual_dist = self.p.safe_buffer_time * ego_v
+
         virtual_dist /= weight
-        virtual_dist -= self.p.safe_distance * ego_v
+        virtual_dist -= self.p.safe_buffer_time * ego_v
         return virtual_dist, virtual_speed
 
     def parse(self, loc_hist, perc):
@@ -172,8 +134,9 @@ class PercParser:
                 car_set = cars
 
             for car in car_set:
-                if car is not None:
-                    self.cell_status[cell_itr].add(car['state'])
+                for state_itr in Predictor.all_states:
+                    if car['state'][state_itr]:
+                        self.cell_status[cell_itr].add(state_itr)
 
     # def panic_check(self):
     #     if (self.cell_status[4]) or (Predictor.reckless in self.cell_status[3]):
@@ -262,8 +225,8 @@ class PercParser:
             rel_time_list.append(abs(car['rel_l'] / car['rel_speed']))
         rel_time = np.min(rel_time_list)
 
-        mid_point = self.p.safe_distance * 2
-        slope = self.p.safe_distance / 2
+        mid_point = self.p.safe_buffer_time * 2
+        slope = self.p.safe_buffer_time / 2
         score = 1 / (1 + math.exp(- slope * (rel_time - mid_point)))
         return score, 'Relative approaching time: {}.'.format(rel_time)
 

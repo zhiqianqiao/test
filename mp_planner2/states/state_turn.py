@@ -19,7 +19,7 @@ class StateTurn(State):
             msg['txt'] = 'Lane change interupted. Switching to defensive driving mode...'
             return msg
 
-        virtual_dist, virtual_speed = self.perc_parser.get_virtual_car(vehicle_info, cur_state)
+        virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(vehicle_info, cur_state)
         msg['traj'], is_finished = self.traj_gen.generate(virtual_dist, virtual_speed, vehicle_info, cur_state)
         if is_finished:
             msg['state'] = State.acc

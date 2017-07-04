@@ -72,7 +72,7 @@ class StateACC(State):
                 msg['state'] = best_state
                 msg['txt'] = 'Planned for lane changing but not safe enough (score: {}, pressure: {}),' \
                              'performing fallback plan (ACC)'.format(max_score, cl_pressure)
-                virtual_dist, virtual_speed = self.perc_parser.get_virtual_car(vehicle_info, best_state)
+                virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(vehicle_info, best_state)
                 msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, vehicle_info, best_state)
                 return msg
 
@@ -81,6 +81,6 @@ class StateACC(State):
 
         msg['state'] = best_state
         msg['txt'] = 'Best state successfully derived'
-        virtual_dist, virtual_speed = self.perc_parser.get_virtual_car(vehicle_info, best_state)
+        virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(vehicle_info, best_state)
         msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, vehicle_info, best_state)
         return msg

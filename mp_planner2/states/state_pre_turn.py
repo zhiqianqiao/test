@@ -22,7 +22,7 @@ class StatePreTurn(State):
                 .format(cur_score, cl_pressure)
             msg['state'] = State.acc
             msg['target_lane'] = None
-            virtual_dist, virtual_speed = self.perc_parser.get_virtual_car(vehicle_info, State.acc)
+            virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(vehicle_info, State.acc)
             msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, vehicle_info, State.acc)
             return msg
 
@@ -32,12 +32,12 @@ class StatePreTurn(State):
             self.start_time = -1
             msg['txt'] = 'Switch from pre-turn signaling to lane changing.'
             msg['state'] = planned_state
-            virtual_dist, virtual_speed = self.perc_parser.get_virtual_car(vehicle_info, planned_state)
+            virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(vehicle_info, planned_state)
             msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, vehicle_info, planned_state)
             return msg
         else:
             msg['txt'] = 'Pre-lane chaning in progress...... still waiting......'
-            virtual_dist, virtual_speed = self.perc_parser.get_virtual_car(vehicle_info, State.acc)
+            virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(vehicle_info, State.acc)
             msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, vehicle_info, State.acc)
             return msg
 
