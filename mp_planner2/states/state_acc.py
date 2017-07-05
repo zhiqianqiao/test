@@ -82,5 +82,6 @@ class StateACC(State):
         msg['state'] = best_state
         msg['txt'] = 'Best state successfully derived'
         virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(vehicle_info, best_state)
+        print virtual_dist, virtual_speed
         msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, vehicle_info, best_state)
         return msg
