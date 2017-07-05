@@ -101,9 +101,7 @@ class PercParser:
         if target_car:
             return target_car['rel_l'], target_car['rel_lv'] + v_info['speed']
         else:
-            # TODO: change back when debug is done
             speed_limit = self.nav_map.get_speed_limit(loc)
-            # speed_limit = v_info['speed'] - 3
             return self.p.safe_buffer_time * speed_limit, speed_limit
 
     def parse(self, v_info, perc):

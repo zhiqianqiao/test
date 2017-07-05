@@ -237,7 +237,6 @@ class TrajGenerator(object):
         self.map_handler.update(tsmap_handler)
 
     def generate(self, dist, target_speed, v_info, action):
-        dist /= 10
         ego_speed = v_info['speed']
         # TODO: acceleration?
         accel = 0
