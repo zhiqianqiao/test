@@ -54,8 +54,8 @@ class Planner:
             self.loc_hist = self.loc_hist[-self.p.loc_hist_len:]
         self.timestamp += 1
 
-        perc = self.predictor.update(v_info, raw_perc, self.timestamp)
-        msg = self.state.update(v_info, perc, msg)
+        perc = self.predictor.update_predictor(v_info, raw_perc, self.timestamp)
+        msg = self.state.update_state(v_info, perc, msg)
         print v_info['gps_time']
         self.state = getattr(self, msg['state'])
         return msg

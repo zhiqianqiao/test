@@ -234,7 +234,7 @@ class PercParser:
             raise 'final_state not supported!!'
         cond_flag, cond_msg = self._safety_pre_check(src_state, final_state)
         if not cond_flag:
-            return 0, cond_msg
+            return 0.0, cond_msg
 
         if final_state == State.l_turn:
             cars = self.cell_pool[0] + self.cell_pool[1] + self.cell_pool[2]
@@ -244,4 +244,4 @@ class PercParser:
             cars = self.cell_pool[3] + self.cell_pool[4] + self.cell_pool[5]
         density_score, density_msg = self._density_score(cars)
         rel_diff_score, rel_diff_msg = self._rel_diff_score(cars)
-        return (density_score + rel_diff_score) / 2, '\n'.join([density_msg, rel_diff_msg])
+        return float(density_score + rel_diff_score) / 2, '\n'.join([density_msg, rel_diff_msg])

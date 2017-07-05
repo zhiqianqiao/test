@@ -49,7 +49,7 @@ class Predictor:
         self.lr_th = lr_th
         self.ou_th = ou_th
 
-    def update(self, v_info, raw_perc, ts):
+    def update_predictor(self, v_info, raw_perc, ts):
         """
         raw_perc_dict[item.id] = {'abs_x': item.position.x,
                                   'abs_y': item.position.y,

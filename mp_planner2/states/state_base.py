@@ -19,12 +19,13 @@ class State(object):
         self.traj_gen = traj_gen
         self.p = p
         self.start_time = -1
-        self.msg = {'state': None, 'target_lane': None, 'txt': '', 'scores': dict()}
+        self.msg = {'state': None, 'target_lane': None, 'txt': '',
+                    'scores': {State.l_turn: 0.0, State.r_turn: 0.0, State.acc: 0.0}}
 
     def update_map(self, nav_map):
         self.nav_map = nav_map
         
-    def update(self, v_info, perc, msg):
+    def update_state(self, v_info, perc, msg):
         pass
 
     @staticmethod

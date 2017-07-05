@@ -3,7 +3,7 @@ __author__ = 'xhou'
 
 
 class StateTurn(State):
-    def update(self, v_info, perc, msg):
+    def update_state(self, v_info, perc, msg):
         loc = v_info['abs_loc']
         cur_state = msg['state']
 

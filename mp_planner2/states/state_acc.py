@@ -3,7 +3,7 @@ __author__ = 'xhou'
 
 
 class StateACC(State):
-    def update(self, v_info, perc, in_msg):
+    def update_state(self, v_info, perc, in_msg):
         loc = v_info['abs_loc']
 
         self.perc_parser.parse(v_info, perc)
