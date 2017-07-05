@@ -3,13 +3,13 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import make_pipeline
 from collections import defaultdict
 import numpy as np
+import math
 
 __author__ = ['xhou', 'zpyan']
 
 NANOSECONDS_IN_SECOND = 1e9
 
 
-# TODO: better logging
 class Predictor:
     normal = 'normal'
     overspeed = 'overspeed'
@@ -49,8 +49,42 @@ class Predictor:
         self.lr_th = lr_th
         self.ou_th = ou_th
 
-    def _update(self, new_perc, ts):
+    def update(self, v_info, raw_perc, ts):
+        """
+        raw_perc_dict[item.id] = {'abs_x': item.position.x,
+                                  'abs_y': item.position.y,
+                                  'rel_xv': item.relative_velocity.x,
+                                  'rel_yv': item.relative_velocity.y}
+        """
+        x, y = v_info['abs_loc']
+        heading = v_info['heading']
+        ch = math.cos(heading)
+        sh = -math.sin(heading)
+        # rotate_matrix = [[math.cos(heading), -math.sin(heading)], [math.sin(heading), math.cos(heading)]]
+        proc_perc = dict()
+        for car_id, car_dict in raw_perc.iteritems():
+            abs_x, abs_y = car_dict['abs_x'], car_dict['abs_y']
+            rel_x1, rel_y1 = abs_x - x, abs_y - y
+            rel_x, rel_y = ch * rel_x1 - sh * rel_y1, sh * rel_x1 + ch * rel_y1
+            # rel_y, rel_x = -ch * rel_x1 + sh * rel_y1, sh * rel_x1 + ch * rel_y1
+            proc_perc[car_id] = {'rel_x': rel_x, 'rel_y': rel_y,
+                                 'rel_xv': car_dict['rel_xv'], 'rel_yv': car_dict['rel_yv'],
+                                 'rel_l': rel_x, 'rel_d': rel_y,
+                                 'rel_lv': car_dict['rel_xv'], 'rel_dv': car_dict['rel_yv'],
+                                 'abs_x': abs_x, 'abs_y': abs_y}
+            proc_perc[car_id]['state'] = dict()
+            for cur_state in Predictor.all_states:
+                proc_perc[car_id]['state'][cur_state] = False
+            proc_perc[car_id]['state'][Predictor.unknown] = True
+        return proc_perc
+
+    def __update(self, new_perc, ts):
+        proc_perc = dict()
+
         for traj_id, value in new_perc.items():
+            proc_perc[traj_id] = [value['rel_x'], value['rel_y'], 0.0,
+                                  value['rel_xv'], value['rel_yv'], 0.0, 4.2, 2.5, 1.5, 1.0, None, None]
+        for traj_id, value in proc_perc.items():
             car_perc = self._car_perc[traj_id]
             car_perc['ts'].append(ts / NANOSECONDS_IN_SECOND)
             car_perc['pos'].append(value[:3])
@@ -59,6 +93,7 @@ class Predictor:
             car_perc['conf'].append(value[9])
             car_perc['dist'].append(value[10])
             car_perc['move'].append(value[11])
+        return proc_perc
 
     # TODO: get a proper reckless threshold
     def _is_reckless(self, traj_id):
@@ -158,13 +193,13 @@ class Predictor:
         data['state'] = Predictor.unknown
         return data
     
-    def update(self, raw_perc, ts):
+    def _update(self, v_info, raw_perc, ts):
         """
         :param ts: timestamp of raw_perc
         :param raw_perc: {traj_id: [x, y, z, xv, yv, zv, xl, yl, zl, confidence, dist_class, move_class]}
         :return: {traj_id: {rel_x:, rel_y:, rel_xv:, rel_yv:, state:}}
         """
-        self._update(raw_perc, ts)
+        raw_perc = self._update(raw_perc, ts)
         processed_perc = defaultdict(dict)
         for traj_id in raw_perc:
             state = [0] * 7

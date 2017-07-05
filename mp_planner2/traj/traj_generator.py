@@ -236,18 +236,16 @@ class TrajGenerator(object):
     def update(self, tsmap_handler):
         self.map_handler.update(tsmap_handler)
 
-    def generate(self, dist, target_speed, vehicle_info, action):
-        # dist /= 10
-        ego_speed = vehicle_info['ego_v']
+    def generate(self, dist, target_speed, v_info, action):
+        ego_speed = v_info['speed']
         # TODO: acceleration?
         accel = 0
-        position = vehicle_info['loc_hist'][-1]
+        position = v_info['abs_loc']
         speeds_list, self.prev_diff, self.i_term, self.cali_flag = \
             self.speed_profile_gen.speed_profile_generation(dist, target_speed, ego_speed, accel,
                                                             self.prev_diff, self.i_term, self.cali_flag, False,
                                                             30.0)
-        print "dist: ", dist, ", target_speed: ", target_speed, ", ego_speed: ", ego_speed
-        speed_profile = [speeds_list, 0.05, vehicle_info['timestamp']]
+        speed_profile = [speeds_list, 0.05, v_info['timestamp']]
 
         traj, traj_flag = self._generate(self.action_mapping[action], speed_profile, position, ego_speed)
         # print '\n'.join(['Distance: {}'.format(dist), 'Target speed: {}'.format(target_speed),

@@ -3,8 +3,6 @@ import math
 
 
 class TrajMap(object):
-
-
     def __init__(self):
         self.handler = None
         self.heading_dist = None
