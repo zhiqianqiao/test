@@ -154,9 +154,9 @@ class PercParser:
                 return False, 'Cell {} status {}'.format(cell_itr, status)
         return True, ''
 
-    def _safety_pre_check(self, src_state, dst_state):
+    def _safety_pre_check(self, src_state, final_state):
         safe_condition = [set() for i in range(self.p.cell_num)]
-        if src_state == State.acc and dst_state in {State.l_turn, State.l_pre_turn}:
+        if src_state == State.acc and final_state == State.l_turn:
             safe_condition[0] = {Predictor.underspeed}
             safe_condition[2] = {Predictor.overspeed}
             safe_condition[3] = {Predictor.l_turn, Predictor.underspeed}
@@ -166,7 +166,7 @@ class PercParser:
                 cond_flag = False
                 cond_msg = '\n'.join([cond_msg, 'Cell 1 not empty!'])
             return cond_flag, cond_msg
-        if src_state == State.acc and dst_state in {State.r_turn, State.r_pre_turn}:
+        if src_state == State.acc and final_state == State.r_turn:
             safe_condition[6] = {Predictor.underspeed}
             safe_condition[8] = {Predictor.overspeed}
             safe_condition[3] = {Predictor.r_turn, Predictor.underspeed}
@@ -176,17 +176,17 @@ class PercParser:
                 cond_flag = False
                 cond_msg = '\n'.join([cond_msg, 'Cell 7 not empty!'])
             return cond_flag, cond_msg
-        if src_state in {State.l_turn, State.l_pre_turn} and dst_state in {State.l_turn, State.l_pre_turn}:
+        if src_state == State.l_turn and final_state == State.l_turn:
             safe_condition[0] = {Predictor.underspeed}
             safe_condition[1] = {Predictor.underspeed, Predictor.overspeed}
             safe_condition[9] = {Predictor.r_turn}
             return self._eval_safe_condition(safe_condition)
-        if src_state in {State.r_turn, State.r_pre_turn} and dst_state in {State.r_turn, State.r_pre_turn}:
+        if src_state == State.r_turn and final_state == State.r_turn:
             safe_condition[6] = {Predictor.underspeed}
             safe_condition[7] = {Predictor.underspeed, Predictor.overspeed}
             safe_condition[10] = {Predictor.r_turn}
             return self._eval_safe_condition(safe_condition)
-        if src_state == State.acc and dst_state == State.acc:
+        if src_state == State.acc and final_state == State.acc:
             safe_condition[0] = {Predictor.underspeed}
             safe_condition[1] = {Predictor.r_turn}
             safe_condition[7] = {Predictor.l_turn}
@@ -225,15 +225,22 @@ class PercParser:
         return score, 'Relative approaching time: {}.'.format(rel_time)
 
     def safety_check(self, src_state, dst_state):
-        cond_flag, cond_msg = self._safety_pre_check(src_state, dst_state)
+        final_state = dst_state
+        if dst_state in {State.l_pre_turn, State.l_turn}:
+            final_state = State.l_turn
+        if dst_state in {State.r_pre_turn, State.r_turn}:
+            final_state = State.r_turn
+        if final_state not in {State.acc, State.l_turn, State.r_turn}:
+            raise 'final_state not supported!!'
+        cond_flag, cond_msg = self._safety_pre_check(src_state, final_state)
         if not cond_flag:
             return 0, cond_msg
 
-        if dst_state in {State.l_turn, State.l_pre_turn}:
+        if final_state == State.l_turn:
             cars = self.cell_pool[0] + self.cell_pool[1] + self.cell_pool[2]
-        if dst_state in {State.r_turn, State.r_pre_turn}:
+        if final_state == State.r_turn:
             cars = self.cell_pool[6] + self.cell_pool[7] + self.cell_pool[8]
-        if dst_state == State.acc:
+        if final_state == State.acc:
             cars = self.cell_pool[3] + self.cell_pool[4] + self.cell_pool[5]
         density_score, density_msg = self._density_score(cars)
         rel_diff_score, rel_diff_msg = self._rel_diff_score(cars)

@@ -19,6 +19,7 @@ class State(object):
         self.traj_gen = traj_gen
         self.p = p
         self.start_time = -1
+        self.msg = {'state': None, 'target_lane': None, 'txt': '', 'scores': dict()}
 
     def update_map(self, nav_map):
         self.nav_map = nav_map

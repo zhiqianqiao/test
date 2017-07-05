@@ -55,11 +55,7 @@ class Planner:
         self.timestamp += 1
 
         perc = self.predictor.update(v_info, raw_perc, self.timestamp)
-        try:
-            print v_info['gps_time']
-            msg = self.state.update(v_info, perc, msg)
-        except:
-            print v_info['gps_time']
-            a = 12
+        msg = self.state.update(v_info, perc, msg)
+        print v_info['gps_time']
         self.state = getattr(self, msg['state'])
         return msg
