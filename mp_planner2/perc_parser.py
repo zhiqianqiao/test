@@ -27,7 +27,7 @@ class PercParser:
         self.nav_map = nav_map
 
     def init_cells(self, v_info):
-        speed = v_info['speed']
+        speed = max(v_info['speed'], self.p.min_driving_speed)
         loc = v_info['abs_loc']
         p = self.p
         cell_upper = np.ones(p.cell_num) * p.cell_border_1 * speed
@@ -74,11 +74,11 @@ class PercParser:
             msg = 'Front vehicle detected in ACC state. {} car(s) found'.format(len(fv_list))
         if planned_state in {State.l_turn, State.r_turn, State.l_pre_turn, State.r_pre_turn}:
             target_cell_id = 0 if planned_state in {State.l_turn, State.l_pre_turn} else 6
-            fv_list = {self.cell_nearest[target_cell_id], self.cell_nearest[3]}
+            if self.cell_nearest[target_cell_id]:
+                fv_list.append(self.cell_nearest[target_cell_id])
+            if self.cell_nearest[3]:
+                fv_list.append(self.cell_nearest[3])
             msg = 'Front vehicle detected in turning state. {} car(s) found'.format(len(fv_list))
-
-        if None in fv_list:
-            fv_list.remove(None)
         return fv_list, msg
 
     def get_front_vehicle(self, v_info, planned_state):
@@ -91,9 +91,12 @@ class PercParser:
         target_car = None
 
         for car in fv_list:
-            rel_speed = car['rel_lv']
+            try:
+                rel_speed = car['rel_lv']
+            except:
+                a = 12
             rel_distance = car['rel_l']
-            crash_time = rel_distance / rel_speed
+            crash_time = -rel_distance / rel_speed
             if 0 < crash_time < min_crash_time:
                 target_car = car
                 min_crash_time = crash_time
@@ -101,7 +104,8 @@ class PercParser:
         if target_car:
             return target_car['rel_l'], target_car['rel_lv'] + v_info['speed']
         else:
-            speed_limit = self.nav_map.get_speed_limit(loc)
+            # TODO: very slow speed limit
+            speed_limit = min(self.nav_map.get_speed_limit(loc), self.p.default_speed_limit)
             return self.p.safe_buffer_time * speed_limit, speed_limit
 
     def parse(self, v_info, perc):

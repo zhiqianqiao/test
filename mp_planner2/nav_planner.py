@@ -4,7 +4,10 @@ from predictor import Predictor
 from states.state_acc import StateACC
 from states.state_base import *
 from states.state_turn import StateLTurn, StateRTurn
+from states.state_defense import StateDefense
 from traj.traj_generator import TrajGenerator
+
+from states.state_pre_turn import StateLPreTurn, StateRPreTurn
 
 __author__ = 'xhou'
 
@@ -19,10 +22,12 @@ class Planner:
         self.timestamp = 0
 
         self.acc = StateACC(self.perc_parser, self.traj_gen, p)
-        self.l_pre_turn = StateLTurn(self.perc_parser, self.traj_gen, p)
-        self.r_pre_turn = StateRTurn(self.perc_parser, self.traj_gen, p)
+        self.l_pre_turn = StateLPreTurn(self.perc_parser, self.traj_gen, p)
+        self.r_pre_turn = StateRPreTurn(self.perc_parser, self.traj_gen, p)
         self.l_turn = StateLTurn(self.perc_parser, self.traj_gen, p)
         self.r_turn = StateRTurn(self.perc_parser, self.traj_gen, p)
+        self.defense = StateDefense(self.perc_parser, self.traj_gen, p)
+
         self.emergency = StateEmergency(self.perc_parser, self.traj_gen, p)
         self.detour = StateDetour(self.perc_parser, self.traj_gen, p)
         self.term = StateTerm(self.perc_parser, self.traj_gen, p)
@@ -55,7 +60,9 @@ class Planner:
         self.timestamp += 1
 
         perc = self.predictor.update_predictor(v_info, raw_perc, self.timestamp)
-        msg = self.state.update_state(v_info, perc, msg)
-        print v_info['gps_time']
-        self.state = getattr(self, msg['state'])
-        return msg
+        out_msg = self.state.update_state(v_info, perc, msg)
+        if out_msg['state'] != 'acc':
+            print 'Out state: {}\nCurrent thoughts: {}'.format(out_msg['state'], out_msg['txt'])
+
+        self.state = getattr(self, out_msg['state'])
+        return out_msg

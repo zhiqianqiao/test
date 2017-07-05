@@ -11,11 +11,12 @@ class StatePreTurn(State):
         cur_state = msg['state']
         planned_state = State.l_turn if cur_state == State.l_pre_turn else State.r_turn
         self.perc_parser.parse(v_info, perc)
-        cur_score = self.perc_parser.safety_check(State.acc, planned_state)
+        cur_score, _ = self.perc_parser.safety_check(State.acc, planned_state)
 
-        remain_c_val = self.nav_map.remaining(loc)
+        remain_c_val = min(self.nav_map.remaining(loc), self.p.remain_th)
         cl_pressure = (self.p.remain_th - remain_c_val) / self.p.remain_th * self.p.max_cl_pressure
 
+        print "in pre state: ", cur_score, cl_pressure, self.p.change_lane_th
         if cur_score + cl_pressure < self.p.change_lane_th:
             self.start_time = -1
             msg['txt'] = 'Threat detected during pre-lane-changing! (score: {}, pressure: {}), fallback to ACC'\

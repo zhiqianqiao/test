@@ -25,7 +25,7 @@ class State(object):
     def update_map(self, nav_map):
         self.nav_map = nav_map
         
-    def update_state(self, v_info, perc, msg):
+    def update_state(self, v_info, perc, in_msg):
         pass
 
     @staticmethod
@@ -35,9 +35,8 @@ class State(object):
 
 
 class StateException(State):
-    def update_generic(self, error_msg):
-        pass
-
+    def update_state(self, v_info, perc, in_msg):
+        print in_msg['state'] * 100
 
 class StateEmergency(StateException):
     pass

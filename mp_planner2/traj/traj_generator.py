@@ -211,7 +211,7 @@ class TrajGenerator(object):
 
         self._kp1 = None
         self._kp2 = None
-        self.v_lateral = 0.05
+        self.v_lateral = 0.5
         self.cancel_rate = 2.0
         self.adj_lim = 0.3
         self.change_x_speed = 3.75 / 4.0
@@ -226,12 +226,13 @@ class TrajGenerator(object):
         self.central_distance = None
         self.merge_distance = None
 
-        self.speed_profile_gen = SpeedProfileACC([-3.0, 3.0], 50, 2.5, 0.4, 30.0)
+        self.speed_profile_gen = SpeedProfileACC([-3.0, 3.0], 50, 2.5, 0.4, 15.0)
         self.prev_diff = 0
         self.i_term = 0
         self.cali_flag = False
 
-        self.action_mapping = {'acc': 'acc', 'l_turn': 'left', "r_turn": 'right', "emergency": 'undo'}
+        self.action_mapping = {'acc': 'acc', 'l_turn': 'left', 'r_turn': 'right', 'emergency': 'undo',
+                               'l_pre_turn': 'acc', 'r_pre_turn': 'acc'}
 
     def update(self, tsmap_handler):
         self.map_handler.update(tsmap_handler)
@@ -246,6 +247,7 @@ class TrajGenerator(object):
                                                             self.prev_diff, self.i_term, self.cali_flag, False,
                                                             30.0)
         speed_profile = [speeds_list, 0.05, v_info['timestamp']]
+        # print 'speeds list: ' + '--'.join(['{0:.3}'.format(x) for x in speeds_list[::5]])
 
         traj, traj_flag = self._generate(self.action_mapping[action], speed_profile, position, ego_speed)
         # print '\n'.join(['Distance: {}'.format(dist), 'Target speed: {}'.format(target_speed),
@@ -341,7 +343,7 @@ class TrajGenerator(object):
             if self.full_profile[index][0] >= distance:
                 return index
         d_base, v, t_base = self.full_profile[-1]
-        ls = v * self.t_interval
+        ls = max(v, 1.0) * self.t_interval
         num = int(math.ceil((distance - d_base) / ls))
         for i in xrange(num):
             d_base += ls

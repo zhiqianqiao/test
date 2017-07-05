@@ -15,7 +15,7 @@ class StateACC(State):
         #     return msg
 
         remain_th = self.p.remain_th
-        remain_c_val = self.nav_map.remaining(loc)
+        remain_c_val = min(self.nav_map.remaining(loc), self.p.remain_th)
         if remain_c_val < self.p.critical_remain_th:
             self.msg['state'] = State.detour
             self.msg['txt'] = 'Lane extension too short to peform change lane. Exiting navigation and prepare detour...'
@@ -36,6 +36,7 @@ class StateACC(State):
         state_list = list()
         if remain_c:
             state_list.append(State.acc)
+            # TODO: implement minimal lane changing policy
             # if self.perc_parser.front_car_stats() < self.p.min_front_speed:
             if True:
                 if remain_l:
@@ -70,6 +71,7 @@ class StateACC(State):
 
         if best_state in {State.l_pre_turn, State.r_pre_turn}:
             cl_pressure = (self.p.remain_th - remain_c_val) / self.p.remain_th * self.p.max_cl_pressure
+            print "cur score: ", max_score + cl_pressure, ", change lane th: ", self.p.change_lane_th
             if max_score + cl_pressure < self.p.change_lane_th:
                 best_state = State.acc
                 self.msg['state'] = best_state
