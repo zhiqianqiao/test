@@ -3,44 +3,54 @@ __author__ = 'xhou'
 
 
 class StatePreTurn(State):
-    def update_state(self, v_info, perc, msg):
+    def update_state(self, v_info, perc, in_memory):
         loc = v_info['abs_loc']
         timestamp = v_info['timestamp']
-        if self.start_time < 0:
-            self.start_time = timestamp
-        cur_state = msg['state']
-        planned_state = State.l_turn if cur_state == State.l_pre_turn else State.r_turn
-        self.perc_parser.parse(v_info, perc)
-        cur_score, _ = self.perc_parser.safety_check(State.acc, planned_state)
-
-        remain_c_val = min(self.nav_map.remaining(loc), self.p.remain_th)
-        cl_pressure = (self.p.remain_th - remain_c_val) / self.p.remain_th * self.p.max_cl_pressure
-
-        print "in pre state: ", cur_score, cl_pressure, self.p.change_lane_th
-        if cur_score + cl_pressure < self.p.change_lane_th:
-            self.start_time = -1
-            msg['txt'] = 'Threat detected during pre-lane-changing! (score: {}, pressure: {}), fallback to ACC'\
-                .format(cur_score, cl_pressure)
-            msg['state'] = State.acc
-            msg['target_lane'] = None
-            virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(v_info, State.acc)
-            msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, v_info, State.acc)
-            return msg
-
+        turn_info = in_memory['turn_info']
+        planned_state = State.l_turn if turn_info['direction'] == 'l' else State.r_turn
+        prev_state = State.l_pre_turn if turn_info['direction'] == 'l' else State.r_pre_turn
         State.signaling_turn_light(planned_state, self.p.light_freq)
+
+        self.perc_parser.parse(v_info, perc)
+
+        if self.perc_parser.panic_check():
+            debug_msg = 'Panic check failed! Defense!'
+            in_memory.update_memory(prev_state, State.defense, debug_msg, timestamp, v_info=v_info, perc_info=perc)
+            return in_memory
+
+        cur_score, diagnose_msg = self.perc_parser.safety_check(State.acc, planned_state)
+        if cur_score < self.p.change_lane_interrupt_th:
+            debug_msg = 'Lane changing aborted! Fallback to defense'
+            in_memory.update_memory(prev_state, State.defense, debug_msg, timestamp, v_info=v_info, perc_info=perc)
+            return in_memory
+
+        virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(v_info, planned_state)
+        traj, _ = self.traj_gen.generate(virtual_dist, virtual_speed, v_info, planned_state)
+        if turn_info['start_time'] + self.p.turn_signaling_iter_num < timestamp:
+            debug_msg = 'Go for lane changing.'
+            in_memory.update_memory(prev_state, planned_state, debug_msg, timestamp, traj=traj)
+            return in_memory
+        else:
+            if self.nav_map.remaining(loc) < self.p.change_lane_th:
+                debug_msg = 'Not enough remaining lane to perform lane changing. Detour!'
+                in_memory.update_memory(prev_state, State.detour, debug_msg, timestamp)
+                return in_memory
+            debug_msg = 'Flash n wait for lane changing'
+
+
 
         if timestamp > self.start_time + self.p.turn_signaling_iter_num:
             self.start_time = -1
-            msg['txt'] = 'Switch from pre-turn signaling to lane changing.'
-            msg['state'] = planned_state
+            in_memory['txt'] = 'Switch from pre-turn signaling to lane changing.'
+            in_memory['state'] = planned_state
             virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(v_info, planned_state)
-            msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, v_info, planned_state)
-            return msg
+            in_memory['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, v_info, planned_state)
+            return in_memory
         else:
-            msg['txt'] = 'Pre-lane chaning in progress...... still waiting......'
+            in_memory['txt'] = 'Pre-lane chaning in progress...... still waiting......'
             virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(v_info, State.acc)
-            msg['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, v_info, State.acc)
-            return msg
+            in_memory['traj'], _ = self.traj_gen.generate(virtual_dist, virtual_speed, v_info, State.acc)
+            return in_memory
 
 
 class StateLPreTurn(StatePreTurn):

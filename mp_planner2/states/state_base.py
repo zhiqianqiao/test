@@ -1,3 +1,4 @@
+
 __author__ = 'xhou'
 
 
@@ -12,6 +13,7 @@ class State(object):
     emergency = 'emergency'
     detour = 'detour'
     valid_states = {l_turn, r_turn, l_pre_turn, r_pre_turn, acc, defense}
+    turn_states = {l_turn, l_pre_turn, r_turn, r_pre_turn}
 
     def __init__(self, perc_parser, traj_gen, p):
         self.nav_map = None
@@ -19,13 +21,11 @@ class State(object):
         self.traj_gen = traj_gen
         self.p = p
         self.start_time = -1
-        self.msg = {'state': None, 'target_lane': None, 'txt': '',
-                    'scores': {State.l_turn: 0.0, State.r_turn: 0.0, State.acc: 0.0}}
 
     def update_map(self, nav_map):
         self.nav_map = nav_map
         
-    def update_state(self, v_info, perc, in_msg):
+    def update_state(self, v_info, perc, in_memory):
         pass
 
     @staticmethod
@@ -36,7 +36,7 @@ class State(object):
 
 class StateException(State):
     def update_state(self, v_info, perc, in_msg):
-        print in_msg['state'] * 100
+        print 'Warning!'
 
 class StateEmergency(StateException):
     pass
