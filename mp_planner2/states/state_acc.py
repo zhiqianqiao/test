@@ -16,7 +16,7 @@ class StateACC(State):
             in_memory.update_memory(State.acc, State.detour, debug_msg, timestamp)
             return in_memory
         recom_l, recom_c, recom_r = self.nav_map.recom(loc)
-        if recom_c and (not remain_c):
+        if recom_c and (remain_c <= self.p.remain_th):
             debug_msg = 'Termination point within reach. Exiting navigation...'
             in_memory.update_memory(State.acc, State.term, debug_msg, timestamp)
             return in_memory
@@ -26,6 +26,7 @@ class StateACC(State):
         topdown_scores = defaultdict(float)
         topdown_scores[State.acc] = self.p.acc_bonus
 
+        target_lane = None
         if remain_c > self.p.remain_th:
             state_list.append(State.acc)
             # TODO: implement minimal lane changing policy
@@ -40,6 +41,7 @@ class StateACC(State):
                 target_state = State.l_pre_turn
             if recom_r:
                 target_state = State.r_pre_turn
+            assert target_lane, 'Navigation level lane recommendation bug!'
             state_list.append(target_state)
             topdown_scores[target_state] = (self.p.remain_th - remain_c) / self.p.remain_th * self.p.max_cl_pressure
 

@@ -1,10 +1,9 @@
 import math
-
 import numpy as np
 
 from states.state_base import State
 from predictor import Predictor
-
+from lane_cell import LaneCell
 from tsmap import Point3d
 
 __author__ = 'xhou'
@@ -12,53 +11,22 @@ __author__ = 'xhou'
 
 class PercParser:
     def __init__(self, p):
-        self.nav_map = None
         self.p = p
-
-        self.cells = [[] for _ in range(p.cell_num)]
+        self.nav_map = None
         self.perc = None
+        self.timestamp = None
 
-        self.cell_pool = []
-        self.cell_nearest = []
-        self.cell_status = []
-        self.nearest_only = {0, 2, 3, 5, 6, 8}
+        self.lane_cell = LaneCell()
+
+        self.cell_pool = None
+        self.cell_nearest = None
+        self.cell_status = None
 
     def update_map(self, nav_map):
         self.nav_map = nav_map
+        self.lane_cell.update_map(nav_map)
 
-    def init_cells(self, v_info):
-        speed = max(v_info['speed'], self.p.min_driving_speed)
-        loc = v_info['abs_loc']
-        p = self.p
-        cell_upper = np.ones(p.cell_num) * p.cell_border_1 * speed
-        cell_lower = np.ones(p.cell_num) * p.cell_border_6 * speed
-
-        cell_upper[[1, 7, 9, 10]] = p.cell_border_2 * speed
-        cell_upper[4] = p.cell_border_3 * speed
-        cell_upper[[2, 5, 8]] = p.cell_border_5 * speed
-
-        cell_lower[[0, 6]] = p.cell_border_2 * speed
-        cell_lower[3] = p.cell_border_3 * speed
-        cell_lower[[9, 10]] = p.cell_border_4 * speed
-        cell_lower[[1, 4, 7]] = p.cell_border_5 * speed
-
-        l_loc = self.nav_map.get_par_loc(loc, 'l')
-        r_loc = self.nav_map.get_par_loc(loc, 'r')
-        ll_loc = self.nav_map.get_par_loc(loc, 'll')
-        rr_loc = self.nav_map.get_par_loc(loc, 'rr')
-        loc_list = [l_loc, l_loc, l_loc, loc, loc, loc, r_loc, r_loc, r_loc, ll_loc, rr_loc]
-        loc_list = [self._to_list(loc) for loc in loc_list]     # lambda (x), self._to_point3d(x)
-
-        for i in range(self.p.cell_num):
-            self.cells[i] = self.nav_map.get_extension(loc_list[i], cell_upper[i], cell_lower[i])
-
-    @staticmethod
-    def _to_list(loc):
-        if loc is None or type(loc) is list:
-            return loc
-        return [loc.x, loc.y]
-
-    def _get_fv_set(self, loc, planned_state):
+    def _get_fv_set(self, planned_state):
         fv_list = list()
         if planned_state not in State.valid_states:
             return list(), 'Ego-state not supported!'
@@ -83,18 +51,12 @@ class PercParser:
 
     def get_front_vehicle(self, v_info, planned_state):
         loc = v_info['abs_loc']
-        ego_v = v_info['speed']
-
-        fv_list, fv_msg = self._get_fv_set(loc, planned_state)
+        fv_list, fv_msg = self._get_fv_set(planned_state)
 
         min_crash_time = np.inf
         target_car = None
-
         for car in fv_list:
-            try:
-                rel_speed = car['rel_lv']
-            except:
-                a = 12
+            rel_speed = car['rel_lv']
             rel_distance = car['rel_l']
             crash_time = -rel_distance / rel_speed
             if 0 < crash_time < min_crash_time:
@@ -108,40 +70,9 @@ class PercParser:
             speed_limit = min(self.nav_map.get_speed_limit(loc), self.p.default_speed_limit)
             return self.p.safe_buffer_time * speed_limit, speed_limit
 
-    def parse(self, v_info, perc):
-        self.perc = perc
-        self.init_cells(v_info)
-
-        self.cell_pool = [list() for i in range(self.p.cell_num)]
-        self.cell_nearest = [None] * self.p.cell_num
-        self.cell_status = [set() for i in range(self.p.cell_num)]
-
-        for car_id, car in perc.iteritems():
-            for cell_itr, cur_lane_ext in enumerate(self.cells):
-                car_loc = [car['abs_x'], car['abs_y']]
-                p = Point3d(car_loc[0], car_loc[1], 0)
-                # TODO: clean up this shit!
-                if cur_lane_ext.contains_loc(self.nav_map.submap.get_lane(p), p):
-                    self.cell_pool[cell_itr].append(car)
-                    break
-
-        for cell_itr in self.nearest_only:
-            n_dist = np.inf
-            for car in self.cell_pool[cell_itr]:
-                if car['rel_l'] < n_dist:
-                    self.cell_nearest[cell_itr] = car
-                    n_dist = car['rel_l']
-
-        for cell_itr, car_list in enumerate(self.cell_pool):
-            if cell_itr in self.nearest_only:
-                car_list = [self.cell_nearest[cell_itr]]
-
-            for car in car_list:
-                if not car:
-                    continue
-                for state_itr in Predictor.all_states:
-                    if car['state'][state_itr]:
-                        self.cell_status[cell_itr].add(state_itr)
+    def parse(self, v_info, perc, in_memory):
+        self.timestamp = in_memory['timestamp']
+        self.cell_pool, self.cell_nearest, self.cell_status = self.lane_cell.renew_cells(v_info, perc, in_memory)
 
     def _panic_check(self):
         if (self.cell_status[4]) or (Predictor.reckless in self.cell_status[3]):
