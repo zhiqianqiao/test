@@ -3,9 +3,9 @@ __author__ = 'xhou'
 
 class LaneCell:
     def __init__(self):
-        pass
+        self.nav_map = None
 
-    def update_loc(self):
+    def refresh_loc(self):
         pass
 
     def renew(self):

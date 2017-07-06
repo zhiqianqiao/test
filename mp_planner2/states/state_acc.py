@@ -1,4 +1,4 @@
-from .state_base import State
+from .state_base import State, defaultdict
 __author__ = 'xhou'
 
 
@@ -22,9 +22,9 @@ class StateACC(State):
             return in_memory
 
         state_list = [State.defense]
-        bottomup_scores = dict()
-        topdown_scores = dict()
-        safety_log = dict()
+        scores = dict()
+        topdown_scores = defaultdict(float)
+        topdown_scores[State.acc] = self.p.acc_bonus
 
         if remain_c > self.p.remain_th:
             state_list.append(State.acc)
@@ -44,22 +44,20 @@ class StateACC(State):
             topdown_scores[target_state] = (self.p.remain_th - remain_c) / self.p.remain_th * self.p.max_cl_pressure
 
         for state in state_list:
-            bottomup_scores[state], safety_log[state] = self.perc_parser.safety_check(State.acc, state)
-            if state in topdown_scores:
-                bottomup_scores[state] += topdown_scores[state]
+            scores[state] = self.perc_parser.safety_check(State.acc, state) + topdown_scores[state]
 
-        best_state = max(bottomup_scores)
+        best_state = max(scores)
+        virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(v_info, best_state)
+        traj, _ = self.traj_gen.generate(virtual_dist, virtual_speed, v_info, best_state)
+
         init_lane = None
         target_lane = None
         debug_msg = 'Best state successfully derived'
         if best_state in State.turn_states:
-            if bottomup_scores[best_state] < self.p.change_lane_th:
-                direction = 'l' if best_state == State.l_pre_turn else 'r'
-                init_lane = self.nav_map.get_extension(self.nav_map.get_par_loc(loc, 'c'))
-                target_lane = self.nav_map.get_extension(self.nav_map.get_par_loc(loc, direction))
-        virtual_dist, virtual_speed = self.perc_parser.get_front_vehicle(v_info, best_state)
-        traj, _ = self.traj_gen.generate(virtual_dist, virtual_speed, v_info, best_state)
+            direction = 'l' if best_state == State.l_pre_turn else 'r'
+            init_lane = self.nav_map.get_extension(self.nav_map.get_par_loc(loc, 'c'))
+            target_lane = self.nav_map.get_extension(self.nav_map.get_par_loc(loc, direction))
         in_memory.update_memory(prev_state=State.acc, next_state=State.acc,
-                                debug_msg=debug_msg, timestamp=timestamp, scores=bottomup_scores, traj=traj,
+                                debug_msg=debug_msg, timestamp=timestamp, scores=scores, traj=traj,
                                 init_lane=init_lane, target_lane=target_lane)
         return in_memory
