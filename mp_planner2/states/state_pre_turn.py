@@ -13,12 +13,14 @@ class StatePreTurn(State):
 
         self.perc_parser.parse(v_info, perc)
 
-        if self.perc_parser.panic_check():
-            debug_msg = 'Panic check failed! Defense!'
-            in_memory.update_memory(prev_state, State.defense, debug_msg, timestamp, v_info=v_info, perc_info=perc)
-            return in_memory
+        state_list = [State.defense, planned_state]
+        bottomup_scores = dict()
+        topdown_scores = dict()
+        safety_log = dict()
 
-        cur_score, diagnose_msg = self.perc_parser.safety_check(State.acc, planned_state)
+        for state in state_list:
+            bottomup_scores[state], safety_log[state] = self.perc_parser.safety_check(State.acc, state)
+
         if cur_score < self.p.change_lane_interrupt_th:
             debug_msg = 'Lane changing aborted! Fallback to defense'
             in_memory.update_memory(prev_state, State.defense, debug_msg, timestamp, v_info=v_info, perc_info=perc)

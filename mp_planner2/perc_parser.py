@@ -143,10 +143,10 @@ class PercParser:
                     if car['state'][state_itr]:
                         self.cell_status[cell_itr].add(state_itr)
 
-    # def panic_check(self):
-    #     if (self.cell_status[4]) or (Predictor.reckless in self.cell_status[3]):
-    #         return True
-    #     return False
+    def _panic_check(self):
+        if (self.cell_status[4]) or (Predictor.reckless in self.cell_status[3]):
+            return True
+        return False
 
     def _eval_safe_condition(self, safe_condition):
         for cell_itr, status in enumerate(self.cell_status):
@@ -227,22 +227,26 @@ class PercParser:
         return score, 'Relative approaching time: {}.'.format(rel_time)
 
     def safety_check(self, src_state, dst_state):
-        final_state = dst_state
-        if dst_state in {State.l_pre_turn, State.l_turn}:
-            final_state = State.l_turn
-        if dst_state in {State.r_pre_turn, State.r_turn}:
-            final_state = State.r_turn
-        if final_state not in {State.acc, State.l_turn, State.r_turn}:
+        if dst_state not in State.valid_states:
             raise 'final_state not supported!!'
-        cond_flag, cond_msg = self._safety_pre_check(src_state, final_state)
+
+        if dst_state == State.defense:
+            return self._panic_check()
+
+        if dst_state in {State.l_pre_turn, State.l_turn}:
+            dst_state = State.l_turn
+        if dst_state in {State.r_pre_turn, State.r_turn}:
+            dst_state = State.r_turn
+
+        cond_flag, cond_msg = self._safety_pre_check(src_state, dst_state)
         if not cond_flag:
             return 0.0, cond_msg
 
-        if final_state == State.l_turn:
+        if dst_state == State.l_turn:
             cars = self.cell_pool[0] + self.cell_pool[1] + self.cell_pool[2]
-        if final_state == State.r_turn:
+        if dst_state == State.r_turn:
             cars = self.cell_pool[6] + self.cell_pool[7] + self.cell_pool[8]
-        if final_state == State.acc:
+        if dst_state == State.acc:
             cars = self.cell_pool[3] + self.cell_pool[4] + self.cell_pool[5]
         density_score, density_msg = self._density_score(cars)
         rel_diff_score, rel_diff_msg = self._rel_diff_score(cars)
