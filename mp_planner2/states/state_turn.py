@@ -12,7 +12,7 @@ class StateTurn(State):
         State.signaling_turn_light(cur_state, self.p.light_freq)
         state_list = [State.defense, cur_state]
 
-        self.perc_parser.parse(v_info, perc)
+        self.perc_parser.parse(v_info, perc, in_memory)
         scores = dict()
         topdown_scores = defaultdict(float)
         topdown_scores[cur_state] = self.p.abort_cl_penalty

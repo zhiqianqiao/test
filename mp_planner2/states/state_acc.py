@@ -7,7 +7,7 @@ class StateACC(State):
         loc = v_info['abs_loc']
         timestamp = v_info['timestamp']
 
-        self.perc_parser.parse(v_info, perc)
+        self.perc_parser.parse(v_info, perc, in_memory)
         remain_c = self.nav_map.remaining(loc)
         remain_l = self.nav_map.remaining(self.nav_map.get_par_loc(loc, 'l'))
         remain_r = self.nav_map.remaining(self.nav_map.get_par_loc(loc, 'r'))

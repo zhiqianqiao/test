@@ -12,7 +12,7 @@ class StatePreTurn(State):
 
         State.signaling_turn_light(planned_state, self.p.light_freq)
 
-        self.perc_parser.parse(v_info, perc)
+        self.perc_parser.parse(v_info, perc, in_memory)
 
         if self.nav_map.remaining(loc) < self.p.change_lane_th:
             debug_msg = 'Not enough remaining lane to perform lane changing. Detour!'
